@@ -1431,7 +1431,7 @@ set -a
 source "$REPO_DIR/.env"
 set +a
 
-python3 build/build_data.py
+python3 -m build.build_data
 
 if git diff --quiet -- data.json; then
   echo "No data changes, skipping commit."
