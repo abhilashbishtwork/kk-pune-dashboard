@@ -883,6 +883,14 @@ function manualAvgInRange(opsRows, storeName, field, start, end) {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
+function manualAvgInRangeForPlatform(opsRows, storeName, field, platform, start, end) {
+  const values = opsRows
+    .filter(r => r.store === storeName && r.platform === platform && r.date >= start && r.date <= end && r[field] !== null)
+    .map(r => r[field]);
+  if (values.length === 0) return null;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
 function buildHealthRow(s, opsRows, range) {
   const computed = opsComputedInRange(s.ops_computed.daily, range.start, range.end);
   return {
@@ -891,7 +899,8 @@ function buildHealthRow(s, opsRows, range) {
     cancellationPct: computed.cancellationPct,
     kptP80Minutes: computed.kptP80Minutes,
     availability: manualAvgInRange(opsRows, s.display_name, 'availability', range.start, range.end),
-    serviceability: manualAvgInRange(opsRows, s.display_name, 'serviceability', range.start, range.end),
+    swiggyServiceability: manualAvgInRangeForPlatform(opsRows, s.display_name, 'serviceability', 'Swiggy', range.start, range.end),
+    zomatoServiceability: manualAvgInRangeForPlatform(opsRows, s.display_name, 'serviceability', 'Zomato', range.start, range.end),
   };
 }
 
@@ -911,8 +920,12 @@ const HEALTH_COLUMNS = [
     render: (cell, r) => cell.appendChild(metricChip('', r.availability !== null ? r.availability.toFixed(0) : null, 'min90', r.availability !== null ? '%' : '')),
   },
   {
-    label: 'Serviceability %', value: r => r.serviceability, numeric: true,
-    render: (cell, r) => cell.appendChild(metricChip('', r.serviceability !== null ? r.serviceability.toFixed(0) : null, 'min90', r.serviceability !== null ? '%' : '')),
+    label: 'Swiggy-Serviceability %', value: r => r.swiggyServiceability, numeric: true,
+    render: (cell, r) => cell.appendChild(metricChip('', r.swiggyServiceability !== null ? r.swiggyServiceability.toFixed(0) : null, 'min90', r.swiggyServiceability !== null ? '%' : '')),
+  },
+  {
+    label: 'Zomato-Serviceability %', value: r => r.zomatoServiceability, numeric: true,
+    render: (cell, r) => cell.appendChild(metricChip('', r.zomatoServiceability !== null ? r.zomatoServiceability.toFixed(0) : null, 'min90', r.zomatoServiceability !== null ? '%' : '')),
   },
 ];
 
