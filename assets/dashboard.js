@@ -1,7 +1,8 @@
 // assets/dashboard.js
 'use strict';
 
-const CSV_URL = 'ops_metrics.csv';
+const OPS_CSV_URL = 'ops_metrics.csv';
+const HOURS_CSV_URL = 'store_hours.csv';
 
 const THRESHOLDS = {
   availability_pct: 90,
@@ -45,7 +46,7 @@ function parseCsvLine(line) {
   return values;
 }
 
-function parseOpsCsv(text) {
+function parseCsvRows(text) {
   const lines = text.trim().split('\n').filter(l => l.length > 0);
   if (lines.length < 2) return [];
   const header = parseCsvLine(lines[0]).map(h => h.trim());
@@ -53,17 +54,30 @@ function parseOpsCsv(text) {
     const values = parseCsvLine(line);
     const row = {};
     header.forEach((h, i) => { row[h] = values[i] !== undefined ? values[i].trim() : ''; });
-    return {
-      date: row['Date'],
-      store: row['Store'],
-      platform: row['Platform'],
-      availability: row['Availability%'] === '' ? null : parseFloat(row['Availability%']),
-      serviceability: row['Serviceability%'] === '' ? null : parseFloat(row['Serviceability%']),
-      kpt: row['KPT'] === '' ? null : row['KPT'],
-      cancellation: row['Cancellation%'] === '' ? null : parseFloat(row['Cancellation%']),
-      rating: row['Rating'] === '' ? null : parseFloat(row['Rating']),
-    };
+    return row;
   });
+}
+
+function parseOpsCsv(text) {
+  return parseCsvRows(text).map(row => ({
+    date: row['Date'],
+    store: row['Store'],
+    platform: row['Platform'],
+    availability: row['Availability%'] === '' ? null : parseFloat(row['Availability%']),
+    serviceability: row['Serviceability%'] === '' ? null : parseFloat(row['Serviceability%']),
+    kpt: row['KPT'] === '' ? null : row['KPT'],
+    cancellation: row['Cancellation%'] === '' ? null : parseFloat(row['Cancellation%']),
+    rating: row['Rating'] === '' ? null : parseFloat(row['Rating']),
+    reviewCount: row['Review Count'] === '' ? null : parseInt(row['Review Count'], 10),
+  }));
+}
+
+function parseStoreHoursCsv(text) {
+  const map = {};
+  for (const row of parseCsvRows(text)) {
+    map[row['Store']] = { opens: row['Opens'] || '', closes: row['Closes'] || '' };
+  }
+  return map;
 }
 
 function latestOpsByStorePlatform(opsRows) {
@@ -75,25 +89,76 @@ function latestOpsByStorePlatform(opsRows) {
   return Object.values(latest);
 }
 
-// ---------- formatting helpers ----------
+// ---------- date helpers ----------
+
+function shiftDateStr(dateStr, days) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function allDatesAcross(stores) {
+  const set = new Set();
+  for (const s of stores) for (const d of s.revenue.daily) set.add(d.date);
+  return Array.from(set).sort();
+}
+
+function parseClockTime(text) {
+  // "11:00 AM" / "1:00 PM" -> minutes since midnight, or null if blank/unparseable.
+  if (!text) return null;
+  const m = text.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!m) return null;
+  let hour = parseInt(m[1], 10) % 12;
+  if (m[3].toUpperCase() === 'PM') hour += 12;
+  return hour * 60 + parseInt(m[2], 10);
+}
+
+function nowMinutesIst() {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date());
+  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
+  return hour * 60 + minute;
+}
+
+function isStoreOpenNow(hours) {
+  if (!hours) return null;
+  const opens = parseClockTime(hours.opens);
+  const closes = parseClockTime(hours.closes);
+  if (opens === null || closes === null) return null;
+  const now = nowMinutesIst();
+  return now >= opens && now < closes;
+}
+
+function latestCompleteDate(stores) {
+  const dates = allDatesAcross(stores);
+  return dates.length ? dates[dates.length - 1] : null;
+}
+
+// ---------- formatting ----------
 
 function fmtMoney(n) {
   return '₹' + Math.round(n).toLocaleString('en-IN');
 }
 
 function fmtMoneyCompact(n) {
-  if (n >= 100000) return '₹' + (n / 100000).toFixed(1) + 'L';
-  if (n >= 1000) return '₹' + (n / 1000).toFixed(1) + 'k';
-  return '₹' + Math.round(n);
+  const sign = n < 0 ? '-' : '';
+  n = Math.abs(n);
+  if (n >= 100000) return sign + '₹' + (n / 100000).toFixed(1) + 'L';
+  if (n >= 1000) return sign + '₹' + (n / 1000).toFixed(1) + 'k';
+  return sign + '₹' + Math.round(n);
 }
 
-function latestCompleteDate(stores) {
-  let max = null;
-  for (const s of stores) {
-    const last = s.revenue.daily.length ? s.revenue.daily[s.revenue.daily.length - 1].date : null;
-    if (last && (!max || last > max)) max = last;
-  }
-  return max;
+function fmtPct(n, decimals) {
+  return n.toFixed(decimals === undefined ? 1 : decimals) + '%';
+}
+
+function wowLabel(curr, prior) {
+  if (!prior || prior <= 0) return curr > 0 ? 'new vs last week' : null;
+  const pct = ((curr - prior) / prior) * 100;
+  const arrow = pct >= 0 ? '▲' : '▼';
+  return { text: `${arrow} ${Math.abs(pct).toFixed(0)}% vs last week`, dir: pct >= 0 ? 'up' : 'down' };
 }
 
 function severityByStore(alerts) {
@@ -111,6 +176,13 @@ function metricChipClass(value, kind) {
   if (kind === 'maxCancel') return value <= THRESHOLDS.cancellation_pct ? 'good' : value <= 8 ? 'warn' : 'crit';
   if (kind === 'rating') return value >= THRESHOLDS.rating_min ? 'good' : value >= 3.5 ? 'warn' : 'crit';
   return 'na';
+}
+
+function metricChip(label, value, kind, suffix) {
+  const span = document.createElement('span');
+  span.className = 'metric-chip ' + metricChipClass(value, kind);
+  span.textContent = value === null || value === undefined ? `${label} —` : `${label} ${value}${suffix || ''}`;
+  return span;
 }
 
 // ---------- sparkline (inline SVG, built via DOM — no innerHTML) ----------
@@ -144,54 +216,197 @@ function renderSparkline(container, values) {
   container.appendChild(svg);
 }
 
-// ---------- render: header + KPIs ----------
+// ---------- header ----------
 
 function renderHeader(dashboard) {
   document.getElementById('generated-at').textContent = 'Data as of ' + dashboard.generated_at_ist;
 }
 
-function computeKpis(stores, opsRows, alerts) {
-  let today = 0, wtd = 0, mtd = 0;
-  for (const s of stores) {
-    const last = s.revenue.daily.length ? s.revenue.daily[s.revenue.daily.length - 1] : null;
-    if (last) today += last.total;
-    wtd += s.revenue.wtd.total;
-    mtd += s.revenue.mtd.total;
-  }
-  const ratings = opsRows.map(r => r.rating).filter(r => r !== null);
-  const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
-  return { today, wtd, mtd, alertCount: alerts.length, avgRating };
+// ---------- store picker (per-manager focused view — the "go deep" link) ----------
+
+function getSelectedStore(stores) {
+  const raw = new URLSearchParams(location.search).get('store');
+  if (!raw) return null;
+  const decoded = decodeURIComponent(raw).trim().toLowerCase();
+  return stores.find(s => s.display_name.toLowerCase() === decoded) || null;
 }
 
-function kpiCard({ label, value, sub, alert }) {
-  const div = document.createElement('div');
-  div.className = 'kpi' + (alert ? ' alertcount' : '');
-  const l = document.createElement('div'); l.className = 'label'; l.textContent = label;
-  const v = document.createElement('div'); v.className = 'value'; v.textContent = value;
-  div.appendChild(l);
-  div.appendChild(v);
-  if (sub) {
-    const s = document.createElement('div'); s.className = 'sub'; s.textContent = sub;
-    div.appendChild(s);
+function renderStorePicker(stores, selected) {
+  const el = document.getElementById('store-picker-row');
+  el.innerHTML = '';
+
+  const label = document.createElement('label');
+  label.textContent = selected ? 'Viewing:' : 'Store managers: find your store here →';
+  label.setAttribute('for', 'store-picker');
+  el.appendChild(label);
+
+  const select = document.createElement('select');
+  select.id = 'store-picker';
+  const allOpt = document.createElement('option');
+  allOpt.value = '';
+  allOpt.textContent = 'All 13 stores';
+  select.appendChild(allOpt);
+  for (const s of stores) {
+    const opt = document.createElement('option');
+    opt.value = s.display_name;
+    opt.textContent = s.display_name;
+    if (selected && selected.display_name === s.display_name) opt.selected = true;
+    select.appendChild(opt);
   }
+  select.addEventListener('change', () => {
+    location.href = select.value ? '?store=' + encodeURIComponent(select.value) : location.pathname;
+  });
+  el.appendChild(select);
+
+  if (selected) {
+    const back = document.createElement('a');
+    back.className = 'back-link';
+    back.href = location.pathname;
+    back.textContent = '← All stores';
+    el.appendChild(back);
+    document.getElementById('page-title').textContent = selected.display_name;
+  }
+}
+
+// ---------- KPIs (fixed: yesterday + MTD — not affected by the date-range filter below) ----------
+
+function sumAtDate(stores, dateStr) {
+  let online = 0, dine_in = 0;
+  for (const s of stores) {
+    const entry = s.revenue.daily.find(d => d.date === dateStr);
+    if (entry) { online += Object.values(entry.online).reduce((a, b) => a + b, 0); dine_in += entry.dine_in; }
+  }
+  return { online, dine_in, total: online + dine_in };
+}
+
+function sumMtd(stores) {
+  let online = 0, dine_in = 0, onlineOrders = 0, dineInOrders = 0;
+  for (const s of stores) {
+    online += s.revenue.mtd.online;
+    dine_in += s.revenue.mtd.dine_in;
+    onlineOrders += s.revenue.mtd.online_orders;
+    dineInOrders += s.revenue.mtd.dine_in_orders;
+  }
+  return { online, dine_in, onlineOrders, dineInOrders };
+}
+
+function latestGoogleReviewTotal(opsRows) {
+  const googleRows = opsRows.filter(r => r.platform === 'Google' && r.reviewCount !== null);
+  if (googleRows.length === 0) return null;
+  const latestDate = googleRows.reduce((max, r) => (r.date > max ? r.date : max), googleRows[0].date);
+  return googleRows.filter(r => r.date === latestDate).reduce((sum, r) => sum + r.reviewCount, 0);
+}
+
+function computeFixedKpis(stores, opsRows, alerts) {
+  const yesterday = latestCompleteDate(stores);
+  const priorWeek = yesterday ? shiftDateStr(yesterday, -7) : null;
+  const yToday = yesterday ? sumAtDate(stores, yesterday) : { online: 0, dine_in: 0, total: 0 };
+  const yPrior = priorWeek ? sumAtDate(stores, priorWeek) : { online: 0, dine_in: 0, total: 0 };
+  const mtd = sumMtd(stores);
+  const aovOnline = mtd.onlineOrders > 0 ? mtd.online / mtd.onlineOrders : null;
+  const aovOffline = mtd.dineInOrders > 0 ? mtd.dine_in / mtd.dineInOrders : null;
+  const googleReviews = latestGoogleReviewTotal(opsRows);
+
+  return {
+    yesterday, yToday, yPrior,
+    mtdOnline: mtd.online, mtdOffline: mtd.dine_in,
+    aovOnline, aovOffline,
+    alertCount: alerts.length,
+    googleReviews,
+  };
+}
+
+function kpiCard() {
+  const div = document.createElement('div');
+  div.className = 'kpi';
   return div;
 }
 
-function renderKpis(kpis) {
-  const el = document.getElementById('kpis');
-  el.innerHTML = '';
-  el.appendChild(kpiCard({ label: "Today's revenue", value: fmtMoneyCompact(kpis.today), sub: '13 Pune stores · online + dine-in' }));
-  el.appendChild(kpiCard({ label: 'Week to date', value: fmtMoneyCompact(kpis.wtd) }));
-  el.appendChild(kpiCard({ label: 'Month to date', value: fmtMoneyCompact(kpis.mtd) }));
-  el.appendChild(kpiCard({
-    label: 'Open issues',
-    value: String(kpis.alertCount),
-    sub: kpis.avgRating ? `avg rating ${kpis.avgRating.toFixed(1)}★` : null,
-    alert: kpis.alertCount > 0,
-  }));
+function addKpiText(div, className, text) {
+  const el = document.createElement('div');
+  el.className = className;
+  el.textContent = text;
+  div.appendChild(el);
+  return el;
 }
 
-// ---------- render: alerts ----------
+function renderKpis(k) {
+  const el = document.getElementById('kpis');
+  el.innerHTML = '';
+
+  // 1. Yesterday's revenue
+  const c1 = kpiCard();
+  addKpiText(c1, 'label', "Yesterday's revenue");
+  addKpiText(c1, 'value', fmtMoneyCompact(k.yToday.total));
+  const wow1 = wowLabel(k.yToday.total, k.yPrior.total);
+  if (wow1) addKpiText(c1, 'sub' + (wow1.dir ? ' ' + wow1.dir : ''), wow1.text || wow1);
+  el.appendChild(c1);
+
+  // 2. Online revenue (yesterday)
+  const c2 = kpiCard();
+  addKpiText(c2, 'label', 'Online revenue');
+  addKpiText(c2, 'value', fmtMoneyCompact(k.yToday.online));
+  const wow2 = wowLabel(k.yToday.online, k.yPrior.online);
+  if (wow2) addKpiText(c2, 'sub' + (wow2.dir ? ' ' + wow2.dir : ''), wow2.text || wow2);
+  el.appendChild(c2);
+
+  // 3. Offline (dine-in) revenue (yesterday)
+  const c3 = kpiCard();
+  addKpiText(c3, 'label', 'Offline revenue');
+  addKpiText(c3, 'value', fmtMoneyCompact(k.yToday.dine_in));
+  const wow3 = wowLabel(k.yToday.dine_in, k.yPrior.dine_in);
+  if (wow3) addKpiText(c3, 'sub' + (wow3.dir ? ' ' + wow3.dir : ''), wow3.text || wow3);
+  el.appendChild(c3);
+
+  // 4. MTD online/offline split
+  const c4 = kpiCard();
+  addKpiText(c4, 'label', 'Month to date');
+  const split4 = document.createElement('div'); split4.className = 'split-row';
+  split4.innerHTML = '';
+  const p1 = document.createElement('div'); p1.className = 'part';
+  const p1t = document.createElement('div'); p1t.className = 'tag'; p1t.textContent = 'Online';
+  const p1v = document.createElement('div'); p1v.className = 'val'; p1v.textContent = fmtMoneyCompact(k.mtdOnline);
+  p1.appendChild(p1t); p1.appendChild(p1v);
+  const p2 = document.createElement('div'); p2.className = 'part';
+  const p2t = document.createElement('div'); p2t.className = 'tag'; p2t.textContent = 'Offline';
+  const p2v = document.createElement('div'); p2v.className = 'val'; p2v.textContent = fmtMoneyCompact(k.mtdOffline);
+  p2.appendChild(p2t); p2.appendChild(p2v);
+  split4.appendChild(p1); split4.appendChild(p2);
+  c4.appendChild(split4);
+  el.appendChild(c4);
+
+  // 5. AOV online/offline split
+  const c5 = kpiCard();
+  addKpiText(c5, 'label', 'AOV (MTD)');
+  const split5 = document.createElement('div'); split5.className = 'split-row';
+  const q1 = document.createElement('div'); q1.className = 'part';
+  const q1t = document.createElement('div'); q1t.className = 'tag'; q1t.textContent = 'Online';
+  const q1v = document.createElement('div'); q1v.className = 'val'; q1v.textContent = k.aovOnline !== null ? fmtMoney(k.aovOnline) : '—';
+  q1.appendChild(q1t); q1.appendChild(q1v);
+  const q2 = document.createElement('div'); q2.className = 'part';
+  const q2t = document.createElement('div'); q2t.className = 'tag'; q2t.textContent = 'Offline';
+  const q2v = document.createElement('div'); q2v.className = 'val'; q2v.textContent = k.aovOffline !== null ? fmtMoney(k.aovOffline) : '—';
+  q2.appendChild(q2t); q2.appendChild(q2v);
+  split5.appendChild(q1); split5.appendChild(q2);
+  c5.appendChild(split5);
+  el.appendChild(c5);
+
+  // 6. Open issues
+  const c6 = kpiCard();
+  if (k.alertCount > 0) c6.classList.add('alertcount');
+  addKpiText(c6, 'label', 'Open issues');
+  addKpiText(c6, 'value', String(k.alertCount));
+  el.appendChild(c6);
+
+  // 7. Google reviews (called out separately per request — total as of latest entry)
+  const c7 = kpiCard();
+  addKpiText(c7, 'label', 'Google reviews');
+  addKpiText(c7, 'value', k.googleReviews !== null ? String(k.googleReviews) : '—');
+  addKpiText(c7, 'sub', k.googleReviews !== null ? 'latest total, all stores' : 'no Google rows in ops_metrics.csv yet');
+  el.appendChild(c7);
+}
+
+// ---------- alerts ----------
 
 function renderAlerts(alerts) {
   const el = document.getElementById('alerts-list');
@@ -199,7 +414,7 @@ function renderAlerts(alerts) {
   if (alerts.length === 0) {
     const li = document.createElement('li');
     li.className = 'alert-card ok';
-    li.textContent = '✓ Nothing flagged — all 13 stores within thresholds.';
+    li.textContent = '✓ Nothing flagged in this view.';
     el.appendChild(li);
     return;
   }
@@ -216,13 +431,12 @@ function renderAlerts(alerts) {
   }
 }
 
-// ---------- render: store cards ----------
+// ---------- store cards ----------
 
-function renderStoreCards(stores, severityMap) {
+function renderStoreCards(stores, severityMap, storeHours) {
   const el = document.getElementById('store-grid');
   el.innerHTML = '';
   if (stores.length === 0) {
-    el.innerHTML = '';
     const note = document.createElement('div');
     note.className = 'empty-note';
     note.textContent = 'No stores in this filter.';
@@ -232,8 +446,10 @@ function renderStoreCards(stores, severityMap) {
   for (const s of stores) {
     const last = s.revenue.daily.length ? s.revenue.daily[s.revenue.daily.length - 1] : null;
     const isPrelaunch = !s.launch_date;
+    const hours = (storeHours || {})[s.display_name];
+    const openNow = isStoreOpenNow(hours);
     const card = document.createElement('div');
-    card.className = 'store-card' + (isPrelaunch ? ' prelaunch' : '');
+    card.className = 'store-card' + (isPrelaunch ? ' prelaunch' : '') + (openNow === false ? ' closed-now' : '');
 
     const dot = document.createElement('div');
     const sev = severityMap[s.display_name];
@@ -245,6 +461,12 @@ function renderStoreCards(stores, severityMap) {
 
     const cat = document.createElement('span'); cat.className = 'cat'; cat.textContent = s.category;
     card.appendChild(cat);
+
+    if (openNow === false) {
+      const closedBadge = document.createElement('span'); closedBadge.className = 'closed-badge';
+      closedBadge.textContent = `Closed now (opens ${hours.opens})`;
+      card.appendChild(closedBadge);
+    }
 
     const revLabel = document.createElement('div'); revLabel.className = 'revenue-label'; revLabel.textContent = 'Latest day';
     card.appendChild(revLabel);
@@ -275,80 +497,267 @@ function renderStoreCards(stores, severityMap) {
   }
 }
 
-// ---------- render: ops cards ----------
+// ---------- date range row (drives the two detail tables below) ----------
 
-function metricChip(label, value, kind, suffix) {
-  const span = document.createElement('span');
-  span.className = 'metric-chip ' + metricChipClass(value, kind);
-  span.textContent = value === null || value === undefined ? `${label} —` : `${label} ${value}${suffix || ''}`;
-  return span;
+function getDefaultRange(availableDates) {
+  if (availableDates.length === 0) return { start: null, end: null };
+  const end = availableDates[availableDates.length - 1];
+  const startIdx = Math.max(0, availableDates.length - 7);
+  return { start: availableDates[startIdx], end };
 }
 
-function renderOpsCards(latestOps) {
-  const el = document.getElementById('ops-grid');
+function getRangeFromUrl(availableDates) {
+  const params = new URLSearchParams(location.search);
+  const start = params.get('start');
+  const end = params.get('end');
+  if (start && end) return { start, end };
+  return getDefaultRange(availableDates);
+}
+
+function renderDateRangeRow(availableDates, range, onChange) {
+  const el = document.getElementById('date-range-row');
   el.innerHTML = '';
-  if (latestOps.length === 0) {
-    const note = document.createElement('div');
-    note.className = 'empty-note';
-    note.textContent = 'No ops data entered yet — add rows to ops_metrics.csv.';
-    el.appendChild(note);
-    return;
-  }
-  const byStore = {};
-  for (const row of latestOps) {
-    (byStore[row.store] = byStore[row.store] || []).push(row);
-  }
-  for (const [store, rows] of Object.entries(byStore)) {
-    const card = document.createElement('div');
-    card.className = 'ops-card';
-    const name = document.createElement('div'); name.className = 'store-name'; name.textContent = store;
-    card.appendChild(name);
-    for (const row of rows) {
-      const line = document.createElement('div'); line.className = 'ops-row';
-      const platform = document.createElement('span'); platform.className = 'platform'; platform.textContent = row.platform;
-      line.appendChild(platform);
-      const chips = document.createElement('span'); chips.className = 'metrics-inline';
-      chips.appendChild(metricChip('Avail', row.availability, 'min90', '%'));
-      chips.appendChild(metricChip('Serv', row.serviceability, 'min90', '%'));
-      chips.appendChild(metricChip('Cxl', row.cancellation, 'maxCancel', '%'));
-      chips.appendChild(metricChip('★', row.rating, 'rating', ''));
-      line.appendChild(chips);
-      card.appendChild(line);
+  if (availableDates.length === 0) return;
+  const min = availableDates[0];
+  const max = availableDates[availableDates.length - 1];
+
+  const startLabel = document.createElement('label');
+  startLabel.textContent = 'From';
+  const startInput = document.createElement('input');
+  startInput.type = 'date'; startInput.min = min; startInput.max = max; startInput.value = range.start;
+  startLabel.appendChild(startInput);
+
+  const endLabel = document.createElement('label');
+  endLabel.textContent = 'To';
+  const endInput = document.createElement('input');
+  endInput.type = 'date'; endInput.min = min; endInput.max = max; endInput.value = range.end;
+  endLabel.appendChild(endInput);
+
+  const apply = () => {
+    if (startInput.value && endInput.value && startInput.value <= endInput.value) {
+      const params = new URLSearchParams(location.search);
+      params.set('start', startInput.value);
+      params.set('end', endInput.value);
+      history.replaceState(null, '', '?' + params.toString());
+      onChange({ start: startInput.value, end: endInput.value });
     }
-    el.appendChild(card);
+  };
+  startInput.addEventListener('change', apply);
+  endInput.addEventListener('change', apply);
+
+  const presets = document.createElement('div');
+  presets.className = 'presets';
+  const presetDefs = [
+    { label: '7d', days: 7 },
+    { label: '30d', days: 30 },
+    { label: 'MTD', mtd: true },
+    { label: 'All', all: true },
+  ];
+  for (const p of presetDefs) {
+    const btn = document.createElement('button');
+    btn.textContent = p.label;
+    btn.addEventListener('click', () => {
+      let start;
+      if (p.all) start = min;
+      else if (p.mtd) start = max.slice(0, 8) + '01';
+      else start = availableDates[Math.max(0, availableDates.length - p.days)];
+      startInput.value = start < min ? min : start;
+      endInput.value = max;
+      apply();
+    });
+    presets.appendChild(btn);
+  }
+
+  el.appendChild(startLabel);
+  el.appendChild(endLabel);
+  el.appendChild(presets);
+  const note = document.createElement('span');
+  note.className = 'range-note';
+  note.textContent = 'drives the two tables below';
+  el.appendChild(note);
+}
+
+// ---------- Table 1: revenue / orders / ratings detail ----------
+
+function sumDailyInRange(daily, start, end) {
+  let onlineRev = 0, dineInRev = 0, onlineOrders = 0, dineInOrders = 0, days = 0;
+  for (const d of daily) {
+    if (d.date >= start && d.date <= end) {
+      onlineRev += Object.values(d.online).reduce((a, b) => a + b, 0);
+      dineInRev += d.dine_in;
+      onlineOrders += d.online_orders;
+      dineInOrders += d.dine_in_orders;
+      days++;
+    }
+  }
+  return { onlineRev, dineInRev, onlineOrders, dineInOrders, days };
+}
+
+function ratingCell(opsRows, storeName, platform) {
+  const rows = opsRows.filter(r => r.store === storeName && r.platform === platform && r.rating !== null);
+  if (rows.length === 0) return '—';
+  const latest = rows.reduce((a, b) => (b.date > a.date ? b : a));
+  return latest.rating.toFixed(1) + '★' + (latest.reviewCount !== null ? ` (${latest.reviewCount})` : '');
+}
+
+function th(text) { const el = document.createElement('th'); el.textContent = text; return el; }
+function td(text, cls) { const el = document.createElement('td'); if (cls) el.className = cls; el.textContent = text; return el; }
+
+function renderDetailTable(stores, opsRows, storeHours, range) {
+  const table = document.getElementById('detail-table');
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  thead.innerHTML = ''; tbody.innerHTML = '';
+
+  const headRow = document.createElement('tr');
+  ['Store', 'Revenue/day', 'Orders/day', 'Online revenue', 'Online orders', 'Offline revenue', 'Offline orders', 'Opens', 'Closes', 'Swiggy', 'Zomato', 'Google']
+    .forEach(h => headRow.appendChild(th(h)));
+  thead.appendChild(headRow);
+
+  for (const s of stores) {
+    const sums = sumDailyInRange(s.revenue.daily, range.start, range.end);
+    const hasOffline = s.category === 'Offline';
+    const hours = storeHours[s.display_name] || {};
+    const tr = document.createElement('tr');
+    tr.appendChild(td(s.display_name, 'store-cell'));
+    if (sums.days === 0) {
+      tr.appendChild(td(s.launch_date ? '—' : 'Pre-launch', 'num'));
+      tr.appendChild(td('—', 'num'));
+      tr.appendChild(td('—', 'num'));
+      tr.appendChild(td('—', 'num'));
+      tr.appendChild(td(hasOffline ? '—' : '-', 'num'));
+      tr.appendChild(td(hasOffline ? '—' : '-', 'num'));
+    } else {
+      const totalRev = sums.onlineRev + sums.dineInRev;
+      const totalOrders = sums.onlineOrders + sums.dineInOrders;
+      tr.appendChild(td(fmtMoney(totalRev / sums.days), 'num'));
+      tr.appendChild(td((totalOrders / sums.days).toFixed(1), 'num'));
+      tr.appendChild(td(fmtMoney(sums.onlineRev), 'num'));
+      tr.appendChild(td(String(sums.onlineOrders), 'num'));
+      tr.appendChild(td(hasOffline ? fmtMoney(sums.dineInRev) : '-', 'num'));
+      tr.appendChild(td(hasOffline ? String(sums.dineInOrders) : '-', 'num'));
+    }
+    tr.appendChild(td(hours.opens || '—'));
+    tr.appendChild(td(hours.closes || '—'));
+    tr.appendChild(td(ratingCell(opsRows, s.display_name, 'Swiggy')));
+    tr.appendChild(td(ratingCell(opsRows, s.display_name, 'Zomato')));
+    tr.appendChild(td(ratingCell(opsRows, s.display_name, 'Google')));
+    tbody.appendChild(tr);
+  }
+}
+
+// ---------- Table 2: cancellation / KPT / availability / serviceability ----------
+
+function opsComputedInRange(opsComputedDaily, start, end) {
+  let orders = 0, cancelled = 0, kptWeightedSum = 0, kptWeight = 0;
+  for (const d of opsComputedDaily) {
+    if (d.date >= start && d.date <= end) {
+      orders += d.order_count;
+      cancelled += d.cancelled_orders;
+      if (d.kpt_minutes !== null) { kptWeightedSum += d.kpt_minutes * d.order_count; kptWeight += d.order_count; }
+    }
+  }
+  return {
+    cancellationPct: orders > 0 ? (cancelled / orders) * 100 : null,
+    kptMinutes: kptWeight > 0 ? kptWeightedSum / kptWeight : null,
+  };
+}
+
+function manualAvgInRange(opsRows, storeName, field, start, end) {
+  const values = opsRows.filter(r => r.store === storeName && r.date >= start && r.date <= end && r[field] !== null).map(r => r[field]);
+  if (values.length === 0) return null;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function renderHealthTable(stores, opsRows, range) {
+  const table = document.getElementById('health-table');
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  thead.innerHTML = ''; tbody.innerHTML = '';
+
+  const headRow = document.createElement('tr');
+  ['Store', 'Cancellation %', 'KPT (min)', 'Availability %', 'Serviceability %'].forEach(h => headRow.appendChild(th(h)));
+  thead.appendChild(headRow);
+
+  for (const s of stores) {
+    const computed = opsComputedInRange(s.ops_computed.daily, range.start, range.end);
+    const avail = manualAvgInRange(opsRows, s.display_name, 'availability', range.start, range.end);
+    const serv = manualAvgInRange(opsRows, s.display_name, 'serviceability', range.start, range.end);
+
+    const tr = document.createElement('tr');
+    tr.appendChild(td(s.display_name, 'store-cell'));
+
+    const cxlCell = document.createElement('td'); cxlCell.className = 'num';
+    cxlCell.appendChild(metricChip('', computed.cancellationPct !== null ? computed.cancellationPct.toFixed(1) : null, 'maxCancel', computed.cancellationPct !== null ? '%' : ''));
+    tr.appendChild(cxlCell);
+
+    tr.appendChild(td(computed.kptMinutes !== null ? computed.kptMinutes.toFixed(1) : '—', 'num'));
+
+    const availCell = document.createElement('td'); availCell.className = 'num';
+    availCell.appendChild(metricChip('', avail !== null ? avail.toFixed(0) : null, 'min90', avail !== null ? '%' : ''));
+    tr.appendChild(availCell);
+
+    const servCell = document.createElement('td'); servCell.className = 'num';
+    servCell.appendChild(metricChip('', serv !== null ? serv.toFixed(0) : null, 'min90', serv !== null ? '%' : ''));
+    tr.appendChild(servCell);
+
+    tbody.appendChild(tr);
   }
 }
 
 // ---------- boot ----------
 
 async function loadData() {
-  const [dashboard, csvText] = await Promise.all([
+  const [dashboard, opsCsvText, hoursCsvText] = await Promise.all([
     fetch('data.json').then(r => r.json()),
-    fetch(CSV_URL).then(r => r.text()).catch(() => ''),
+    fetch(OPS_CSV_URL).then(r => r.text()).catch(() => ''),
+    fetch(HOURS_CSV_URL).then(r => r.text()).catch(() => ''),
   ]);
-  const opsRows = csvText ? parseOpsCsv(csvText) : [];
-  return { dashboard, opsRows };
+  const opsRows = opsCsvText ? parseOpsCsv(opsCsvText) : [];
+  const storeHours = hoursCsvText ? parseStoreHoursCsv(hoursCsvText) : {};
+  return { dashboard, opsRows, storeHours };
 }
 
-function renderAll({ dashboard, opsRows }) {
+function renderAll({ dashboard, opsRows, storeHours }) {
+  const selected = getSelectedStore(dashboard.stores);
+  const baseStores = selected ? [selected] : dashboard.stores;
   const today = latestCompleteDate(dashboard.stores) || dashboard.generated_at_ist.slice(0, 10);
   const latestOps = latestOpsByStorePlatform(opsRows);
-  const alerts = window.Alerts.computeAlerts(dashboard.stores, latestOps, THRESHOLDS, today);
-  const severityMap = severityByStore(alerts);
+  const allAlerts = window.Alerts.computeAlerts(dashboard.stores, latestOps, THRESHOLDS, today);
+  const severityMap = severityByStore(allAlerts);
+  const scopedAlerts = selected ? allAlerts.filter(a => a.store === selected.display_name) : allAlerts;
 
   renderHeader(dashboard);
-  renderKpis(computeKpis(dashboard.stores, opsRows, alerts));
-  renderAlerts(alerts);
-  renderStoreCards(dashboard.stores, severityMap);
-  renderOpsCards(latestOps);
+  renderStorePicker(dashboard.stores, selected);
+  renderKpis(computeFixedKpis(baseStores, selected ? opsRows.filter(r => r.store === selected.display_name) : opsRows, scopedAlerts));
+  renderAlerts(scopedAlerts);
+  renderStoreCards(baseStores, severityMap, storeHours);
 
+  const categoryRow = document.getElementById('category-filter-row');
+  categoryRow.style.display = selected ? 'none' : '';
   document.querySelectorAll('.category-filter button').forEach(btn => {
     btn.addEventListener('click', () => {
-      renderStoreCards(window.Alerts.filterByCategory(dashboard.stores, btn.dataset.category), severityMap);
+      const filtered = window.Alerts.filterByCategory(dashboard.stores, btn.dataset.category);
+      renderStoreCards(filtered, severityMap, storeHours);
+      renderDetailTable(filtered, opsRows, storeHours, currentRange);
+      renderHealthTable(filtered, opsRows, currentRange);
       document.querySelectorAll('.category-filter button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
   });
+
+  const availableDates = allDatesAcross(dashboard.stores);
+  let currentRange = getRangeFromUrl(availableDates);
+  if (!currentRange.start) currentRange = getDefaultRange(availableDates);
+
+  const rerenderTables = (range) => {
+    currentRange = range;
+    renderDetailTable(baseStores, opsRows, storeHours, range);
+    renderHealthTable(baseStores, opsRows, range);
+  };
+
+  renderDateRangeRow(availableDates, currentRange, rerenderTables);
+  rerenderTables(currentRange);
 }
 
 loadData().then(renderAll).catch(err => {

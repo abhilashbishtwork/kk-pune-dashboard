@@ -11,7 +11,12 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 from build.stores import up_names, pos_names
-from build.queries import build_online_revenue_query, build_dine_in_revenue_query, build_launch_date_query
+from build.queries import (
+    build_online_revenue_query,
+    build_dine_in_revenue_query,
+    build_ops_metrics_query,
+    build_launch_date_query,
+)
 from build.clickhouse_client import run_query
 from build.aggregate import build_dashboard_payload
 from build.sanity_guard import is_pull_valid
@@ -30,6 +35,7 @@ def run(query_runner, today):
 
     online_rows = query_runner(build_online_revenue_query(stores, start_date, today))
     dine_in_rows = query_runner(build_dine_in_revenue_query(pos_names(), start_date, today))
+    ops_metric_rows = query_runner(build_ops_metrics_query(stores, start_date, today))
     launch_date_rows = query_runner(build_launch_date_query(stores))
 
     # 11, not 13: as of Aug 2026, Ravet and FB Baner are newly launched and
@@ -39,7 +45,7 @@ def run(query_runner, today):
         print("ClickHouse pull failed sanity check — keeping existing data.json", file=sys.stderr)
         return False
 
-    payload = build_dashboard_payload(online_rows, dine_in_rows, launch_date_rows, today)
+    payload = build_dashboard_payload(online_rows, dine_in_rows, ops_metric_rows, launch_date_rows, today)
     payload["generated_at_ist"] = datetime.now(IST).isoformat()
 
     with open(DATA_JSON_PATH, "w") as f:

@@ -1,4 +1,27 @@
-Date,Store,Platform,Availability%,Serviceability%,KPT,Cancellation%,Rating
-2026-08-18,PNQ Pimpri,Swiggy,95,97,18,2.1,4.3
-2026-08-18,PNQ Pimpri,Zomato,93,96,20,3.0,4.2
-2026-08-18,PNQ Pimpri,Google,,,,,4.5
+Date,Store,Platform,Availability%,Serviceability%,KPT,Cancellation%,Rating,Review Count
+2026-08-18,PNQ Tribeca,Swiggy,,,,,4.6,57
+2026-08-18,PNQ Amanora Mall,Swiggy,,,,,4.6,12
+2026-08-18,PNQ Pimpri,Swiggy,,,,,4.6,7
+2026-08-18,PNQ Kothrud,Swiggy,,,,,4.6,10
+2026-08-18,PNQ Viman Nagar,Swiggy,,,,,4.6,5
+2026-08-18,PNQ Wagholi,Swiggy,,,,,4.6,4
+2026-08-18,PNQ Ravet,Swiggy,,,,,4.6,2
+2026-08-18,PNQ KK Dhanori,Swiggy,,,,,4.6,2
+2026-08-18,PNQ KK Hinjewadi,Swiggy,,,,,4.6,2
+2026-08-18,PNQ KK Law College,Swiggy,,,,,4.6,2
+2026-08-18,PNQ KK Sangvi,Swiggy,,,,,4.6,2
+2026-08-18,PNQ KK Niyati Plaza,Swiggy,,,,,4.6,2
+2026-08-18,KK FB Baner,Swiggy,,,,,4.6,20
+2026-08-18,PNQ Tribeca,Zomato,,,,,4.3,125
+2026-08-18,PNQ Amanora Mall,Zomato,,,,,4.2,49
+2026-08-18,PNQ Pimpri,Zomato,,,,,4,18
+2026-08-18,PNQ Kothrud,Zomato,,,,,4,20
+2026-08-18,PNQ Viman Nagar,Zomato,,,,,4,31
+2026-08-18,PNQ Wagholi,Zomato,,,,,2.3,3
+2026-08-18,PNQ Ravet,Zomato,,,,,,
+2026-08-18,PNQ KK Dhanori,Zomato,,,,,,
+2026-08-18,PNQ KK Hinjewadi,Zomato,,,,,4,5
+2026-08-18,PNQ KK Law College,Zomato,,,,,,
+2026-08-18,PNQ KK Sangvi,Zomato,,,,,4,3
+2026-08-18,PNQ KK Niyati Plaza,Zomato,,,,,4,4
+2026-08-18,KK FB Baner,Zomato,,,,,4,30

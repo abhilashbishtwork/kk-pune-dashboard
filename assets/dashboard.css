@@ -34,20 +34,37 @@ body {
 #generated-at { color: var(--muted); font-size: 0.85rem; }
 
 /* ---------- KPI row ---------- */
-.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
-@media (max-width: 800px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 28px; }
 .kpi {
   background: var(--surface);
   border-radius: 14px;
-  padding: 18px 20px;
+  padding: 16px 18px;
   box-shadow: var(--shadow);
   border-top: 3px solid var(--brand);
 }
 .kpi.alertcount { border-top-color: var(--crit); }
-.kpi .label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
-.kpi .value { font-size: 1.85rem; font-weight: 700; margin-top: 4px; letter-spacing: -0.02em; }
+.kpi .label { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.kpi .value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; letter-spacing: -0.02em; }
 .kpi.alertcount .value { color: var(--crit); }
-.kpi .sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.kpi .sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.kpi .sub.up { color: var(--good); font-weight: 700; }
+.kpi .sub.down { color: var(--crit); font-weight: 700; }
+.kpi .split-row { display: flex; justify-content: space-between; gap: 10px; margin-top: 2px; }
+.kpi .split-row .part { flex: 1; }
+.kpi .split-row .part .tag { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.kpi .split-row .part .val { font-size: 1.15rem; font-weight: 700; }
+
+/* ---------- store picker ---------- */
+.store-picker-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.store-picker-row label { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+.store-picker-row select {
+  padding: 9px 14px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); font-size: 0.95rem; font-weight: 600; color: var(--text);
+  max-width: 260px;
+}
+.store-picker-row .back-link {
+  font-size: 0.85rem; color: var(--brand); text-decoration: none; font-weight: 600;
+}
 
 /* ---------- category pills ---------- */
 .category-filter { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
@@ -100,19 +117,50 @@ section > h2 { font-size: 1.15rem; margin: 0 0 12px; display: flex; align-items:
 .store-card .meta-row { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
 .store-card.prelaunch .revenue { color: var(--muted); }
 .store-card.prelaunch { opacity: 0.75; }
+.store-card.closed-now { background: #f0f0ee; }
+.store-card.closed-now .revenue { color: var(--muted); }
+.closed-badge {
+  display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--muted);
+  background: #e4e4e0; border-radius: 5px; padding: 2px 7px; margin: 4px 0 6px;
+}
 
-/* ---------- ops heatmap ---------- */
-.ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-.ops-card { background: var(--surface); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
-.ops-card .store-name { font-weight: 700; margin-bottom: 8px; font-size: 0.92rem; }
-.ops-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 0.82rem; border-top: 1px solid var(--border); }
-.ops-row:first-of-type { border-top: none; }
-.ops-row .platform { color: var(--muted); font-weight: 600; width: 60px; }
-.metric-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
+/* ---------- metric chips (used inside table cells) ---------- */
+.metric-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; padding: 2px 8px; border-radius: 999px; font-weight: 700; white-space: nowrap; }
 .metric-chip.good { background: var(--good-bg); color: var(--brand-dark); }
 .metric-chip.warn { background: var(--warn-bg); color: var(--warn); }
 .metric-chip.crit { background: var(--crit-bg); color: var(--crit); }
 .metric-chip.na { background: #f1f1ef; color: var(--muted); }
-.metrics-inline { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .empty-note { color: var(--muted); font-size: 0.85rem; padding: 10px 2px; }
+
+/* ---------- date range row ---------- */
+.date-range-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.date-range-row label { font-size: 0.82rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.date-range-row input[type="date"] {
+  padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); font-size: 0.88rem; color: var(--text);
+}
+.date-range-row .presets { display: flex; gap: 6px; }
+.date-range-row .presets button {
+  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text);
+}
+.date-range-row .presets button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.date-range-row .range-note { font-size: 0.78rem; color: var(--muted); }
+
+/* ---------- dense tables ---------- */
+.table-scroll { overflow-x: auto; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); }
+table#detail-table, table#health-table {
+  width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 720px;
+}
+table#detail-table th, table#detail-table td,
+table#health-table th, table#health-table td {
+  text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+table#detail-table th, table#health-table th {
+  color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: .03em; font-weight: 700;
+  background: var(--bg); position: sticky; top: 0;
+}
+table#detail-table tbody tr:hover, table#health-table tbody tr:hover { background: var(--bg); }
+table#detail-table td.store-cell, table#health-table td.store-cell { font-weight: 700; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }

@@ -3,6 +3,7 @@ from build.queries import (
     BRAND_ID,
     build_online_revenue_query,
     build_dine_in_revenue_query,
+    build_ops_metrics_query,
     build_launch_date_query,
 )
 
@@ -36,6 +37,20 @@ def test_dine_in_query_filters_pos_channel():
     assert "orders_state_transitions" not in sql
 
 
+def test_online_and_dine_in_queries_select_order_count():
+    assert "count(*) AS order_count" in build_online_revenue_query(STORES, START, END)
+    assert "count(*) AS order_count" in build_dine_in_revenue_query(STORES, START, END)
+
+
+def test_ops_metrics_query_computes_cancellation_and_kpt():
+    sql = build_ops_metrics_query(STORES, START, END)
+    assert "'Acknowledged'" in sql
+    assert "'Food Ready'" in sql
+    assert "cancelled_orders" in sql
+    assert "avg_kpt_minutes" in sql
+    assert "channel IN ('swiggy', 'zomato')" in sql
+
+
 def test_launch_date_query_has_no_date_filter():
     sql = build_launch_date_query(STORES)
     assert "min(toDate(created_at_ist))" in sql
@@ -50,4 +65,5 @@ def test_store_name_with_apostrophe_is_escaped():
 def test_all_queries_end_with_format_clause():
     assert build_online_revenue_query(STORES, START, END).endswith("FORMAT TabSeparatedWithNames")
     assert build_dine_in_revenue_query(STORES, START, END).endswith("FORMAT TabSeparatedWithNames")
+    assert build_ops_metrics_query(STORES, START, END).endswith("FORMAT TabSeparatedWithNames")
     assert build_launch_date_query(STORES).endswith("FORMAT TabSeparatedWithNames")

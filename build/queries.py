@@ -18,7 +18,8 @@ def build_online_revenue_query(store_names, start_date, end_date):
             toDate(o.created_at_ist) AS order_date,
             o.store_name AS store_name,
             o.channel AS channel,
-            sum(o.sub_total_amount - (o.discount - o.aggregator_discount) + o.charges) AS revenue
+            sum(o.sub_total_amount - (o.discount - o.aggregator_discount) + o.charges) AS revenue,
+            count(*) AS order_count
         FROM orders o
         LEFT JOIN (
             SELECT brand_id, order_id,
@@ -48,7 +49,8 @@ def build_dine_in_revenue_query(pos_store_names, start_date, end_date):
         SELECT
             toDate(o.created_at_ist) AS order_date,
             o.store_name AS store_name,
-            sum(o.sub_total_amount - (o.discount - o.aggregator_discount) + o.charges) AS revenue
+            sum(o.sub_total_amount - (o.discount - o.aggregator_discount) + o.charges) AS revenue,
+            count(*) AS order_count
         FROM orders o
         WHERE o.brand_id = {BRAND_ID}
           AND o.store_name IN ({stores_sql})
@@ -56,6 +58,44 @@ def build_dine_in_revenue_query(pos_store_names, start_date, end_date):
           AND toDate(o.created_at_ist) >= toDate('{start_date}', 'Asia/Kolkata')
           AND toDate(o.created_at_ist) <= toDate('{end_date}', 'Asia/Kolkata')
         GROUP BY order_date, store_name
+        FORMAT TabSeparatedWithNames
+    """.strip()
+
+
+def build_ops_metrics_query(store_names, start_date, end_date):
+    """Cancellation % and KPT (Acknowledged -> Food Ready, in minutes) computed
+    live from ClickHouse, per (store, channel, date) — no manual entry needed
+    for these two. Scoped to swiggy/zomato only, matching the platforms
+    tracked in ops_metrics.csv (Google has no order-level KPT/cancellation
+    concept in this data)."""
+    stores_sql = _store_list_sql(store_names)
+    return f"""
+        WITH transitions_pivoted AS (
+            SELECT
+                brand_id,
+                order_id,
+                minIf(status_changed_at_ist, to_status = 'Acknowledged') AS ack_at,
+                minIf(status_changed_at_ist, to_status = 'Food Ready') AS ready_at,
+                argMax(to_status, status_changed_at_ist) AS final_status
+            FROM orders_state_transitions
+            WHERE brand_id = {BRAND_ID}
+            GROUP BY brand_id, order_id
+        )
+        SELECT
+            toDate(o.created_at_ist) AS order_date,
+            o.store_name AS store_name,
+            o.channel AS channel,
+            count(*) AS total_orders,
+            countIf(t.final_status IN ('Cancelled', 'customer_cancelled')) AS cancelled_orders,
+            avgIf(dateDiff('minute', t.ack_at, t.ready_at), t.ready_at > t.ack_at) AS avg_kpt_minutes
+        FROM orders o
+        LEFT JOIN transitions_pivoted t ON t.brand_id = {BRAND_ID} AND t.order_id = o.id
+        WHERE o.brand_id = {BRAND_ID}
+          AND o.store_name IN ({stores_sql})
+          AND o.channel IN ('swiggy', 'zomato')
+          AND toDate(o.created_at_ist) >= toDate('{start_date}', 'Asia/Kolkata')
+          AND toDate(o.created_at_ist) <= toDate('{end_date}', 'Asia/Kolkata')
+        GROUP BY order_date, store_name, channel
         FORMAT TabSeparatedWithNames
     """.strip()
 
