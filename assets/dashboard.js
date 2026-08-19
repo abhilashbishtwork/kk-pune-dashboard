@@ -457,7 +457,33 @@ function renderAlerts(alerts) {
 
 // ---------- store cards ----------
 
-function renderStoreCards(stores, severityMap, storeHours) {
+function dailyInRange(daily, start, end) {
+  return daily.filter(d => d.date >= start && d.date <= end);
+}
+
+function channelValue(day, channel) {
+  if (channel === 'online') return Object.values(day.online).reduce((a, b) => a + b, 0);
+  if (channel === 'offline') return day.dine_in;
+  return day.total;
+}
+
+const CHANNEL_LABELS = { total: 'Total', online: 'Online', offline: 'Offline' };
+
+function renderCardChannelToggle(current, onChange) {
+  const el = document.getElementById('card-channel-toggle');
+  el.innerHTML = '';
+  const label = document.createElement('span'); label.className = 'toggle-label'; label.textContent = 'Graphs show:';
+  el.appendChild(label);
+  for (const key of ['total', 'online', 'offline']) {
+    const btn = document.createElement('button');
+    btn.textContent = CHANNEL_LABELS[key];
+    if (key === current) btn.classList.add('active');
+    btn.addEventListener('click', () => onChange(key));
+    el.appendChild(btn);
+  }
+}
+
+function renderStoreCards(stores, severityMap, storeHours, range, channel) {
   const el = document.getElementById('store-grid');
   el.innerHTML = '';
   if (stores.length === 0) {
@@ -468,7 +494,11 @@ function renderStoreCards(stores, severityMap, storeHours) {
     return;
   }
   for (const s of stores) {
-    const last = s.revenue.daily.length ? s.revenue.daily[s.revenue.daily.length - 1] : null;
+    // Full history since launch by default (the daily array only ever
+    // starts at launch), narrowed to whatever range the date filter above
+    // — the same one driving the two tables — currently has selected.
+    const daysInRange = range ? dailyInRange(s.revenue.daily, range.start, range.end) : s.revenue.daily;
+    const last = daysInRange.length ? daysInRange[daysInRange.length - 1] : null;
     const isPrelaunch = !s.launch_date;
     const hours = (storeHours || {})[s.display_name];
     const openNow = isStoreOpenNow(hours);
@@ -492,15 +522,16 @@ function renderStoreCards(stores, severityMap, storeHours) {
       card.appendChild(closedBadge);
     }
 
-    const revLabel = document.createElement('div'); revLabel.className = 'revenue-label'; revLabel.textContent = 'Latest day';
+    const revLabel = document.createElement('div'); revLabel.className = 'revenue-label';
+    revLabel.textContent = `Latest day (${CHANNEL_LABELS[channel || 'total']})`;
     card.appendChild(revLabel);
     const rev = document.createElement('div'); rev.className = 'revenue';
-    rev.textContent = last ? fmtMoney(last.total) : (isPrelaunch ? 'Pre-launch' : '—');
+    rev.textContent = last ? fmtMoney(channelValue(last, channel || 'total')) : (isPrelaunch ? 'Pre-launch' : '—');
     card.appendChild(rev);
 
     const sparkWrap = document.createElement('div');
-    const recent = s.revenue.daily.slice(-14).map(d => d.total);
-    if (recent.length >= 2) renderSparkline(sparkWrap, recent);
+    const values = daysInRange.map(d => channelValue(d, channel || 'total'));
+    if (values.length >= 2) renderSparkline(sparkWrap, values);
     card.appendChild(sparkWrap);
 
     const meta = document.createElement('div'); meta.className = 'meta-row';
@@ -841,33 +872,49 @@ function renderAll({ dashboard, opsRows, storeHours }) {
   renderStorePicker(dashboard.stores, selected);
   renderKpis(computeFixedKpis(baseStores, selected ? opsRows.filter(r => r.store === selected.display_name) : opsRows, scopedAlerts));
   renderAlerts(scopedAlerts);
-  renderStoreCards(baseStores, severityMap, storeHours);
 
   const categoryRow = document.getElementById('category-filter-row');
   categoryRow.style.display = selected ? 'none' : '';
+
+  const availableDates = allDatesAcross(dashboard.stores);
+
+  // Single source of truth for everything below the sticky date-range row —
+  // the tables AND the card graphs all read from these same three knobs, so
+  // they can never drift out of sync with each other.
+  let currentRange = getRangeFromUrl(availableDates);
+  if (!currentRange.start) currentRange = getDefaultRange(availableDates);
+  let activeCategory = 'All';
+  let cardChannel = 'total';
+
+  const applyFilters = () => {
+    const filtered = window.Alerts.filterByCategory(baseStores, activeCategory);
+    renderStoreCards(filtered, severityMap, storeHours, currentRange, cardChannel);
+    renderDetailTable(filtered, opsRows, currentRange);
+    renderHealthTable(filtered, opsRows, currentRange);
+  };
+
   document.querySelectorAll('.category-filter button').forEach(btn => {
     btn.addEventListener('click', () => {
-      const filtered = window.Alerts.filterByCategory(dashboard.stores, btn.dataset.category);
-      renderStoreCards(filtered, severityMap, storeHours);
-      renderDetailTable(filtered, opsRows, currentRange);
-      renderHealthTable(filtered, opsRows, currentRange);
+      activeCategory = btn.dataset.category;
       document.querySelectorAll('.category-filter button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      applyFilters();
     });
   });
 
-  const availableDates = allDatesAcross(dashboard.stores);
-  let currentRange = getRangeFromUrl(availableDates);
-  if (!currentRange.start) currentRange = getDefaultRange(availableDates);
-
-  const rerenderTables = (range) => {
-    currentRange = range;
-    renderDetailTable(baseStores, opsRows, range);
-    renderHealthTable(baseStores, opsRows, range);
+  const handleChannelChange = (channel) => {
+    cardChannel = channel;
+    renderCardChannelToggle(cardChannel, handleChannelChange);
+    applyFilters();
   };
+  renderCardChannelToggle(cardChannel, handleChannelChange);
 
-  renderDateRangeRow(availableDates, currentRange, rerenderTables);
-  rerenderTables(currentRange);
+  renderDateRangeRow(availableDates, currentRange, (range) => {
+    currentRange = range;
+    applyFilters();
+  });
+
+  applyFilters();
 }
 
 loadData().then(renderAll).catch(err => {
