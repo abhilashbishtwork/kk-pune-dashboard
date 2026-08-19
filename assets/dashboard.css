@@ -33,6 +33,11 @@ body {
 .top h1 .dot { color: var(--brand); }
 #generated-at { color: var(--muted); font-size: 0.85rem; }
 
+.kpi-date-banner {
+  font-size: 1.05rem; font-weight: 800; color: var(--brand-dark);
+  margin: 0 0 10px;
+}
+
 /* ---------- KPI row ---------- */
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 28px; }
 .kpi {

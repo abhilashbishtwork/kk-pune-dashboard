@@ -2,7 +2,10 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { computeAlerts, isStale, filterByCategory } = require('../alerts');
 
-const THRESHOLDS = { availability_pct: 90, serviceability_pct: 90, cancellation_pct: 5, rating_min: 4.0, stale_days: 3 };
+const THRESHOLDS = {
+  availability_pct: 90, serviceability_pct: 90, cancellation_pct: 5, rating_min: 4.0, stale_days: 3,
+  cancellation_alert_pct: 2, kpt_p80_max_minutes: 10, min_online_opd: 10,
+};
 
 test('isStale returns true when older than threshold', () => {
   assert.strictEqual(isStale('2026-08-10', '2026-08-19', 3), true);
@@ -46,6 +49,66 @@ test('computeAlerts flags zero revenue after launch when history exists but toda
   }];
   const alerts = computeAlerts(stores, [], THRESHOLDS, '2026-08-19');
   assert.ok(alerts.some(a => a.type === 'zero_revenue'));
+});
+
+test('computeAlerts flags a store with no Zomato rating entered at all', () => {
+  const stores = [{ display_name: 'PNQ Ravet', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] } }];
+  const opsRows = [{ store: 'PNQ Ravet', platform: 'Swiggy', date: '2026-08-19', availability: null, serviceability: null, cancellation: null, rating: 4.6 }];
+  const alerts = computeAlerts(stores, opsRows, THRESHOLDS, '2026-08-19');
+  assert.ok(alerts.some(a => a.type === 'missing_zomato_rating'));
+});
+
+test('computeAlerts does not flag missing Zomato rating when one exists', () => {
+  const stores = [{ display_name: 'PNQ Pimpri', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] } }];
+  const opsRows = [{ store: 'PNQ Pimpri', platform: 'Zomato', date: '2026-08-19', availability: null, serviceability: null, cancellation: null, rating: 4.0 }];
+  const alerts = computeAlerts(stores, opsRows, THRESHOLDS, '2026-08-19');
+  assert.strictEqual(alerts.some(a => a.type === 'missing_zomato_rating'), false);
+});
+
+test('computeAlerts flags low online OPD for the most recent day', () => {
+  const stores = [{
+    display_name: 'PNQ Kothrud', category: 'Cfi', launch_date: '2025-03-01',
+    revenue: { daily: [{ date: '2026-08-19', online: { swiggy: 100, zomato: 0, ownly: 0 }, dine_in: 0, total: 100, online_orders: 5, dine_in_orders: 0 }] },
+  }];
+  const alerts = computeAlerts(stores, [], THRESHOLDS, '2026-08-19');
+  assert.ok(alerts.some(a => a.type === 'low_online_opd'));
+});
+
+test('computeAlerts does not flag low online OPD at or above the threshold', () => {
+  const stores = [{
+    display_name: 'PNQ Kothrud', category: 'Cfi', launch_date: '2025-03-01',
+    revenue: { daily: [{ date: '2026-08-19', online: { swiggy: 500, zomato: 0, ownly: 0 }, dine_in: 0, total: 500, online_orders: 10, dine_in_orders: 0 }] },
+  }];
+  const alerts = computeAlerts(stores, [], THRESHOLDS, '2026-08-19');
+  assert.strictEqual(alerts.some(a => a.type === 'low_online_opd'), false);
+});
+
+test('computeAlerts flags high computed cancellation for the most recent day', () => {
+  const stores = [{
+    display_name: 'PNQ Wagholi', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] },
+    ops_computed: { daily: [{ date: '2026-08-19', platform: 'Swiggy', order_count: 20, cancelled_orders: 1, kpt_p80_minutes: 3 }] },
+  }];
+  const alerts = computeAlerts(stores, [], THRESHOLDS, '2026-08-19');
+  assert.ok(alerts.some(a => a.type === 'cancellation_high'));
+});
+
+test('computeAlerts flags high computed KPT P80 for the most recent day', () => {
+  const stores = [{
+    display_name: 'PNQ Wagholi', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] },
+    ops_computed: { daily: [{ date: '2026-08-19', platform: 'Swiggy', order_count: 20, cancelled_orders: 0, kpt_p80_minutes: 12 }] },
+  }];
+  const alerts = computeAlerts(stores, [], THRESHOLDS, '2026-08-19');
+  assert.ok(alerts.some(a => a.type === 'kpt_high'));
+});
+
+test('computeAlerts does not flag computed cancellation/KPT when within thresholds', () => {
+  const stores = [{
+    display_name: 'PNQ Wagholi', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] },
+    ops_computed: { daily: [{ date: '2026-08-19', platform: 'Swiggy', order_count: 20, cancelled_orders: 0, kpt_p80_minutes: 3 }] },
+  }];
+  const alerts = computeAlerts(stores, [], THRESHOLDS, '2026-08-19');
+  assert.strictEqual(alerts.some(a => a.type === 'cancellation_high'), false);
+  assert.strictEqual(alerts.some(a => a.type === 'kpt_high'), false);
 });
 
 test('filterByCategory returns only matching stores', () => {

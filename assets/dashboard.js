@@ -10,6 +10,9 @@ const THRESHOLDS = {
   cancellation_pct: 1,
   rating_min: 4.0,
   stale_days: 3,
+  cancellation_alert_pct: 2,   // computed cancellation > 2% is flagged as high
+  kpt_p80_max_minutes: 10,     // computed KPT P80 > 10 min is flagged
+  min_online_opd: 10,          // online orders/day < 10 is flagged
 };
 
 // "Good" bars for the detail/health tables, per explicit business call:
@@ -26,6 +29,10 @@ const ALERT_SEVERITY = {
   availability: 'crit',
   serviceability: 'crit',
   cancellation: 'crit',
+  cancellation_high: 'crit',
+  kpt_high: 'warn',
+  low_online_opd: 'warn',
+  missing_zomato_rating: 'warn',
   rating: 'warn',
   stale: 'warn',
 };
@@ -159,6 +166,16 @@ function fmtMoneyCompact(n) {
   return sign + '₹' + Math.round(n);
 }
 
+// Display-only: strips the "PNQ"/"KK" prefixes that are redundant noise on
+// a page that is only ever Pune-only, KK-only. The underlying display_name
+// (used for every data lookup: opsRows, store_hours, URL ?store=, alert
+// matching) is never touched — this only formats what the user reads.
+function shortName(name) {
+  // FB = "Frozen Bottle" (an unrelated internal tag on the Baner store) —
+  // dropped for now per request, can bring it back later if it matters.
+  return name.replace(/^PNQ\s+/i, '').replace(/^KK\s+/i, '').replace(/^FB\s+/i, '').trim();
+}
+
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function fmtDateLabel(dateStr) {
@@ -281,7 +298,7 @@ function renderStorePicker(stores, selected) {
   for (const s of stores) {
     const opt = document.createElement('option');
     opt.value = s.display_name;
-    opt.textContent = s.display_name;
+    opt.textContent = shortName(s.display_name);
     if (selected && selected.display_name === s.display_name) opt.selected = true;
     select.appendChild(opt);
   }
@@ -296,7 +313,7 @@ function renderStorePicker(stores, selected) {
     back.href = location.pathname;
     back.textContent = '← All stores';
     el.appendChild(back);
-    document.getElementById('page-title').textContent = selected.display_name;
+    document.getElementById('page-title').textContent = shortName(selected.display_name);
   }
 }
 
@@ -363,32 +380,32 @@ function addKpiText(div, className, text) {
 }
 
 function renderKpis(k) {
+  const banner = document.getElementById('kpi-date-banner');
+  banner.textContent = k.yesterday ? `Figures for ${fmtDateLabel(k.yesterday)}` : '';
+
   const el = document.getElementById('kpis');
   el.innerHTML = '';
 
-  // 1. Revenue — labeled with the actual date (not "yesterday") to avoid
-  // any confusion about which day these three day-level cards refer to.
+  // 1. Revenue — the date lives once in the shared banner above, not
+  // repeated on every card (that read as too busy).
   const c1 = kpiCard();
   addKpiText(c1, 'label', 'Revenue');
-  addKpiText(c1, 'date-badge', fmtDateLabel(k.yesterday));
   addKpiText(c1, 'value', fmtMoneyCompact(k.yToday.total));
   const wow1 = wowLabel(k.yToday.total, k.yPrior.total);
   if (wow1) addKpiText(c1, 'sub' + (wow1.dir ? ' ' + wow1.dir : ''), wow1.text || wow1);
   el.appendChild(c1);
 
-  // 2. Online revenue, same date
+  // 2. Online revenue
   const c2 = kpiCard();
   addKpiText(c2, 'label', 'Online revenue');
-  addKpiText(c2, 'date-badge', fmtDateLabel(k.yesterday));
   addKpiText(c2, 'value', fmtMoneyCompact(k.yToday.online));
   const wow2 = wowLabel(k.yToday.online, k.yPrior.online);
   if (wow2) addKpiText(c2, 'sub' + (wow2.dir ? ' ' + wow2.dir : ''), wow2.text || wow2);
   el.appendChild(c2);
 
-  // 3. Offline (dine-in) revenue, same date
+  // 3. Offline (dine-in) revenue
   const c3 = kpiCard();
   addKpiText(c3, 'label', 'Offline revenue');
-  addKpiText(c3, 'date-badge', fmtDateLabel(k.yesterday));
   addKpiText(c3, 'value', fmtMoneyCompact(k.yToday.dine_in));
   const wow3 = wowLabel(k.yToday.dine_in, k.yPrior.dine_in);
   if (wow3) addKpiText(c3, 'sub' + (wow3.dir ? ' ' + wow3.dir : ''), wow3.text || wow3);
@@ -451,7 +468,7 @@ function renderAlerts(alerts) {
     li.className = 'alert-card' + (sev === 'warn' ? ' sev-warn' : '');
     const badge = document.createElement('span');
     badge.className = 'badge';
-    badge.textContent = a.store + ':';
+    badge.textContent = shortName(a.store) + ':';
     li.appendChild(badge);
     li.appendChild(document.createTextNode(' ' + a.detail));
     el.appendChild(li);
@@ -513,7 +530,7 @@ function renderStoreCards(stores, severityMap, storeHours, range, channel) {
     dot.className = 'status-dot' + (sev === 'crit' ? ' crit' : sev === 'warn' ? ' warn' : '');
     card.appendChild(dot);
 
-    const name = document.createElement('div'); name.className = 'name'; name.textContent = s.display_name;
+    const name = document.createElement('div'); name.className = 'name'; name.textContent = shortName(s.display_name);
     card.appendChild(name);
 
     const cat = document.createElement('span'); cat.className = 'cat'; cat.textContent = s.category;
@@ -726,7 +743,7 @@ function buildDetailRow(s, opsRows, range) {
   const google = latestRating(opsRows, s.display_name, 'Google');
   return {
     type: s.category,
-    store: s.display_name,
+    store: shortName(s.display_name),
     prelaunch: !s.launch_date,
     hasOffline,
     revPerDay: days > 0 ? totalRev / days : null,
@@ -813,7 +830,7 @@ function buildHealthRow(s, opsRows, range) {
   const computed = opsComputedInRange(s.ops_computed.daily, range.start, range.end);
   return {
     type: s.category,
-    store: s.display_name,
+    store: shortName(s.display_name),
     cancellationPct: computed.cancellationPct,
     kptP80Minutes: computed.kptP80Minutes,
     availability: manualAvgInRange(opsRows, s.display_name, 'availability', range.start, range.end),
