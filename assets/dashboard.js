@@ -7,9 +7,18 @@ const HOURS_CSV_URL = 'store_hours.csv';
 const THRESHOLDS = {
   availability_pct: 90,
   serviceability_pct: 90,
-  cancellation_pct: 5,
+  cancellation_pct: 1,
   rating_min: 4.0,
   stale_days: 3,
+};
+
+// "Good" bars for the detail/health tables, per explicit business call:
+const GOOD = {
+  revPerDay: 20000,   // >= ₹20k/day
+  ordersPerDay: 100,  // >= 100 orders/day
+  rating: 4.5,         // >= 4.5★ across Swiggy/Zomato/Google
+  cancellationPct: 1, // < 1% is good, above is "high"
+  kptP80Minutes: 10,   // P80 KPT under 10 min is good
 };
 
 const ALERT_SEVERITY = {
@@ -173,8 +182,12 @@ function severityByStore(alerts) {
 function metricChipClass(value, kind) {
   if (value === null || value === undefined) return 'na';
   if (kind === 'min90') return value >= 90 ? 'good' : value >= 80 ? 'warn' : 'crit';
-  if (kind === 'maxCancel') return value <= THRESHOLDS.cancellation_pct ? 'good' : value <= 8 ? 'warn' : 'crit';
+  if (kind === 'maxCancel') return value <= GOOD.cancellationPct ? 'good' : value <= 3 ? 'warn' : 'crit';
   if (kind === 'rating') return value >= THRESHOLDS.rating_min ? 'good' : value >= 3.5 ? 'warn' : 'crit';
+  if (kind === 'ratingGood') return value >= GOOD.rating ? 'good' : value >= THRESHOLDS.rating_min ? 'warn' : 'crit';
+  if (kind === 'minRevPerDay') return value >= GOOD.revPerDay ? 'good' : 'na';
+  if (kind === 'minOrdersPerDay') return value >= GOOD.ordersPerDay ? 'good' : 'na';
+  if (kind === 'maxKpt') return value <= GOOD.kptP80Minutes ? 'good' : value <= 15 ? 'warn' : 'crit';
   return 'na';
 }
 
@@ -182,6 +195,17 @@ function metricChip(label, value, kind, suffix) {
   const span = document.createElement('span');
   span.className = 'metric-chip ' + metricChipClass(value, kind);
   span.textContent = value === null || value === undefined ? `${label} —` : `${label} ${value}${suffix || ''}`;
+  return span;
+}
+
+// Like metricChip, but classifies on a raw value that differs in scale from
+// the displayed text (e.g. Rev/day is shown in thousands but the "good"
+// threshold is a raw rupee figure) — classifying on the display string
+// itself would silently compare the wrong scale.
+function scaledChip(displayText, rawValue, kind) {
+  const span = document.createElement('span');
+  span.className = 'metric-chip ' + metricChipClass(rawValue, kind);
+  span.textContent = displayText;
   return span;
 }
 
@@ -577,7 +601,58 @@ function renderDateRangeRow(availableDates, range, onChange) {
   el.appendChild(note);
 }
 
-// ---------- Table 1: revenue / orders / ratings detail ----------
+// ---------- generic sortable table ----------
+
+function renderSortableTable(tableId, columns, rows, sortState) {
+  const table = document.getElementById(tableId);
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  thead.innerHTML = ''; tbody.innerHTML = '';
+
+  const headRow = document.createElement('tr');
+  columns.forEach((col, i) => {
+    const el = document.createElement('th');
+    el.style.cursor = 'pointer';
+    el.textContent = col.label + (sortState.col === i ? (sortState.dir === 1 ? ' ▲' : ' ▼') : '');
+    el.addEventListener('click', () => {
+      if (sortState.col === i) sortState.dir *= -1;
+      else { sortState.col = i; sortState.dir = 1; }
+      renderSortableTable(tableId, columns, rows, sortState);
+    });
+    headRow.appendChild(el);
+  });
+  thead.appendChild(headRow);
+
+  let sortedRows = rows;
+  if (sortState.col !== null) {
+    const col = columns[sortState.col];
+    sortedRows = [...rows].sort((a, b) => {
+      const av = col.value(a), bv = col.value(b);
+      const aNull = av === null || av === undefined;
+      const bNull = bv === null || bv === undefined;
+      if (aNull && bNull) return 0;
+      if (aNull) return 1; // nulls always sort last, regardless of direction
+      if (bNull) return -1;
+      if (typeof av === 'string') return av.localeCompare(bv) * sortState.dir;
+      return (av - bv) * sortState.dir;
+    });
+  }
+
+  for (const row of sortedRows) {
+    const tr = document.createElement('tr');
+    for (const col of columns) {
+      const cell = document.createElement('td');
+      if (col.numeric) cell.classList.add('num');
+      if (col.storeCell) cell.classList.add('store-cell');
+      if (col.render) col.render(cell, row);
+      else cell.textContent = col.display(row);
+      tr.appendChild(cell);
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+// ---------- Table 1: revenue / orders / ratings detail (per-day averages over the selected range) ----------
 
 function sumDailyInRange(daily, start, end) {
   let onlineRev = 0, dineInRev = 0, onlineOrders = 0, dineInOrders = 0, days = 0;
@@ -593,57 +668,83 @@ function sumDailyInRange(daily, start, end) {
   return { onlineRev, dineInRev, onlineOrders, dineInOrders, days };
 }
 
-function ratingCell(opsRows, storeName, platform) {
+function latestRating(opsRows, storeName, platform) {
   const rows = opsRows.filter(r => r.store === storeName && r.platform === platform && r.rating !== null);
-  if (rows.length === 0) return '—';
+  if (rows.length === 0) return null;
   const latest = rows.reduce((a, b) => (b.date > a.date ? b : a));
-  return latest.rating.toFixed(1) + '★' + (latest.reviewCount !== null ? ` (${latest.reviewCount})` : '');
+  return { rating: latest.rating, reviewCount: latest.reviewCount };
 }
 
-function th(text) { const el = document.createElement('th'); el.textContent = text; return el; }
-function td(text, cls) { const el = document.createElement('td'); if (cls) el.className = cls; el.textContent = text; return el; }
+function fmtThousands(n) {
+  return (n / 1000).toFixed(1);
+}
 
-function renderDetailTable(stores, opsRows, storeHours, range) {
-  const table = document.getElementById('detail-table');
-  const thead = table.querySelector('thead');
-  const tbody = table.querySelector('tbody');
-  thead.innerHTML = ''; tbody.innerHTML = '';
+function buildDetailRow(s, opsRows, range) {
+  const sums = sumDailyInRange(s.revenue.daily, range.start, range.end);
+  const hasOffline = s.category === 'Offline';
+  const days = sums.days;
+  const totalRev = sums.onlineRev + sums.dineInRev;
+  const totalOrders = sums.onlineOrders + sums.dineInOrders;
+  const swiggy = latestRating(opsRows, s.display_name, 'Swiggy');
+  const zomato = latestRating(opsRows, s.display_name, 'Zomato');
+  const google = latestRating(opsRows, s.display_name, 'Google');
+  return {
+    type: s.category,
+    store: s.display_name,
+    prelaunch: !s.launch_date,
+    hasOffline,
+    revPerDay: days > 0 ? totalRev / days : null,
+    opd: days > 0 ? totalOrders / days : null,
+    onRpd: days > 0 ? sums.onlineRev / days : null,
+    ofRpd: days > 0 && hasOffline ? sums.dineInRev / days : null,
+    onOpd: days > 0 ? sums.onlineOrders / days : null,
+    ofOpd: days > 0 && hasOffline ? sums.dineInOrders / days : null,
+    swiggyRating: swiggy ? swiggy.rating : null,
+    swiggyReviews: swiggy ? swiggy.reviewCount : null,
+    zomatoRating: zomato ? zomato.rating : null,
+    zomatoReviews: zomato ? zomato.reviewCount : null,
+    googleRating: google ? google.rating : null,
+    googleReviews: google ? google.reviewCount : null,
+  };
+}
 
-  const headRow = document.createElement('tr');
-  ['Store', 'Revenue/day', 'Orders/day', 'Online revenue', 'Online orders', 'Offline revenue', 'Offline orders', 'Opens', 'Closes', 'Swiggy', 'Zomato', 'Google']
-    .forEach(h => headRow.appendChild(th(h)));
-  thead.appendChild(headRow);
+function ratingChipCell(cell, rating, reviewCount) {
+  if (rating === null) { cell.textContent = '—'; return; }
+  const text = rating.toFixed(1) + '★' + (reviewCount !== null ? ` (${reviewCount})` : '');
+  cell.appendChild(scaledChip(text, rating, 'ratingGood'));
+}
 
-  for (const s of stores) {
-    const sums = sumDailyInRange(s.revenue.daily, range.start, range.end);
-    const hasOffline = s.category === 'Offline';
-    const hours = storeHours[s.display_name] || {};
-    const tr = document.createElement('tr');
-    tr.appendChild(td(s.display_name, 'store-cell'));
-    if (sums.days === 0) {
-      tr.appendChild(td(s.launch_date ? '—' : 'Pre-launch', 'num'));
-      tr.appendChild(td('—', 'num'));
-      tr.appendChild(td('—', 'num'));
-      tr.appendChild(td('—', 'num'));
-      tr.appendChild(td(hasOffline ? '—' : '-', 'num'));
-      tr.appendChild(td(hasOffline ? '—' : '-', 'num'));
-    } else {
-      const totalRev = sums.onlineRev + sums.dineInRev;
-      const totalOrders = sums.onlineOrders + sums.dineInOrders;
-      tr.appendChild(td(fmtMoney(totalRev / sums.days), 'num'));
-      tr.appendChild(td((totalOrders / sums.days).toFixed(1), 'num'));
-      tr.appendChild(td(fmtMoney(sums.onlineRev), 'num'));
-      tr.appendChild(td(String(sums.onlineOrders), 'num'));
-      tr.appendChild(td(hasOffline ? fmtMoney(sums.dineInRev) : '-', 'num'));
-      tr.appendChild(td(hasOffline ? String(sums.dineInOrders) : '-', 'num'));
-    }
-    tr.appendChild(td(hours.opens || '—'));
-    tr.appendChild(td(hours.closes || '—'));
-    tr.appendChild(td(ratingCell(opsRows, s.display_name, 'Swiggy')));
-    tr.appendChild(td(ratingCell(opsRows, s.display_name, 'Zomato')));
-    tr.appendChild(td(ratingCell(opsRows, s.display_name, 'Google')));
-    tbody.appendChild(tr);
-  }
+const DETAIL_COLUMNS = [
+  { label: 'Type', value: r => r.type, display: r => r.type },
+  { label: 'Store', value: r => r.store, display: r => r.store, storeCell: true },
+  {
+    label: "Rev/day (₹'000)", value: r => r.revPerDay, numeric: true,
+    render: (cell, r) => {
+      if (r.revPerDay === null) { cell.textContent = r.prelaunch ? 'Pre-launch' : '—'; return; }
+      cell.appendChild(scaledChip(fmtThousands(r.revPerDay), r.revPerDay, 'minRevPerDay'));
+    },
+  },
+  {
+    label: 'OPD', value: r => r.opd, numeric: true,
+    render: (cell, r) => {
+      if (r.opd === null) { cell.textContent = '—'; return; }
+      cell.appendChild(scaledChip(r.opd.toFixed(1), r.opd, 'minOrdersPerDay'));
+    },
+  },
+  { label: "On-RPD (₹'000)", value: r => r.onRpd, numeric: true, display: r => r.onRpd === null ? '—' : fmtThousands(r.onRpd) },
+  { label: "Of-RPD (₹'000)", value: r => r.hasOffline ? r.ofRpd : null, numeric: true, display: r => !r.hasOffline ? '-' : (r.ofRpd === null ? '—' : fmtThousands(r.ofRpd)) },
+  { label: 'On-OPD', value: r => r.onOpd, numeric: true, display: r => r.onOpd === null ? '—' : r.onOpd.toFixed(1) },
+  { label: 'Of-OPD', value: r => r.hasOffline ? r.ofOpd : null, numeric: true, display: r => !r.hasOffline ? '-' : (r.ofOpd === null ? '—' : r.ofOpd.toFixed(1)) },
+  { label: 'Swiggy', value: r => r.swiggyRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.swiggyRating, r.swiggyReviews) },
+  { label: 'Zomato', value: r => r.zomatoRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.zomatoRating, r.zomatoReviews) },
+  { label: 'Google', value: r => r.googleRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.googleRating, r.googleReviews) },
+];
+
+const detailSortState = { col: null, dir: 1 };
+
+function renderDetailTable(stores, opsRows, range) {
+  const rows = stores.map(s => buildDetailRow(s, opsRows, range));
+  renderSortableTable('detail-table', DETAIL_COLUMNS, rows, detailSortState);
 }
 
 // ---------- Table 2: cancellation / KPT / availability / serviceability ----------
@@ -654,12 +755,15 @@ function opsComputedInRange(opsComputedDaily, start, end) {
     if (d.date >= start && d.date <= end) {
       orders += d.order_count;
       cancelled += d.cancelled_orders;
-      if (d.kpt_minutes !== null) { kptWeightedSum += d.kpt_minutes * d.order_count; kptWeight += d.order_count; }
+      if (d.kpt_p80_minutes !== null) { kptWeightedSum += d.kpt_p80_minutes * d.order_count; kptWeight += d.order_count; }
     }
   }
   return {
     cancellationPct: orders > 0 ? (cancelled / orders) * 100 : null,
-    kptMinutes: kptWeight > 0 ? kptWeightedSum / kptWeight : null,
+    // Order-count-weighted mean of daily P80s — an approximation of a true
+    // range-level P80 (percentiles don't combine by averaging), but the
+    // cheapest honest proxy available without shipping per-order data.
+    kptP80Minutes: kptWeight > 0 ? kptWeightedSum / kptWeight : null,
   };
 }
 
@@ -669,40 +773,44 @@ function manualAvgInRange(opsRows, storeName, field, start, end) {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
+function buildHealthRow(s, opsRows, range) {
+  const computed = opsComputedInRange(s.ops_computed.daily, range.start, range.end);
+  return {
+    type: s.category,
+    store: s.display_name,
+    cancellationPct: computed.cancellationPct,
+    kptP80Minutes: computed.kptP80Minutes,
+    availability: manualAvgInRange(opsRows, s.display_name, 'availability', range.start, range.end),
+    serviceability: manualAvgInRange(opsRows, s.display_name, 'serviceability', range.start, range.end),
+  };
+}
+
+const HEALTH_COLUMNS = [
+  { label: 'Type', value: r => r.type, display: r => r.type },
+  { label: 'Store', value: r => r.store, display: r => r.store, storeCell: true },
+  {
+    label: 'Cancellation %', value: r => r.cancellationPct, numeric: true,
+    render: (cell, r) => cell.appendChild(metricChip('', r.cancellationPct !== null ? r.cancellationPct.toFixed(1) : null, 'maxCancel', r.cancellationPct !== null ? '%' : '')),
+  },
+  {
+    label: 'KPT P80 (min)', value: r => r.kptP80Minutes, numeric: true,
+    render: (cell, r) => cell.appendChild(metricChip('', r.kptP80Minutes !== null ? r.kptP80Minutes.toFixed(1) : null, 'maxKpt')),
+  },
+  {
+    label: 'Availability %', value: r => r.availability, numeric: true,
+    render: (cell, r) => cell.appendChild(metricChip('', r.availability !== null ? r.availability.toFixed(0) : null, 'min90', r.availability !== null ? '%' : '')),
+  },
+  {
+    label: 'Serviceability %', value: r => r.serviceability, numeric: true,
+    render: (cell, r) => cell.appendChild(metricChip('', r.serviceability !== null ? r.serviceability.toFixed(0) : null, 'min90', r.serviceability !== null ? '%' : '')),
+  },
+];
+
+const healthSortState = { col: null, dir: 1 };
+
 function renderHealthTable(stores, opsRows, range) {
-  const table = document.getElementById('health-table');
-  const thead = table.querySelector('thead');
-  const tbody = table.querySelector('tbody');
-  thead.innerHTML = ''; tbody.innerHTML = '';
-
-  const headRow = document.createElement('tr');
-  ['Store', 'Cancellation %', 'KPT (min)', 'Availability %', 'Serviceability %'].forEach(h => headRow.appendChild(th(h)));
-  thead.appendChild(headRow);
-
-  for (const s of stores) {
-    const computed = opsComputedInRange(s.ops_computed.daily, range.start, range.end);
-    const avail = manualAvgInRange(opsRows, s.display_name, 'availability', range.start, range.end);
-    const serv = manualAvgInRange(opsRows, s.display_name, 'serviceability', range.start, range.end);
-
-    const tr = document.createElement('tr');
-    tr.appendChild(td(s.display_name, 'store-cell'));
-
-    const cxlCell = document.createElement('td'); cxlCell.className = 'num';
-    cxlCell.appendChild(metricChip('', computed.cancellationPct !== null ? computed.cancellationPct.toFixed(1) : null, 'maxCancel', computed.cancellationPct !== null ? '%' : ''));
-    tr.appendChild(cxlCell);
-
-    tr.appendChild(td(computed.kptMinutes !== null ? computed.kptMinutes.toFixed(1) : '—', 'num'));
-
-    const availCell = document.createElement('td'); availCell.className = 'num';
-    availCell.appendChild(metricChip('', avail !== null ? avail.toFixed(0) : null, 'min90', avail !== null ? '%' : ''));
-    tr.appendChild(availCell);
-
-    const servCell = document.createElement('td'); servCell.className = 'num';
-    servCell.appendChild(metricChip('', serv !== null ? serv.toFixed(0) : null, 'min90', serv !== null ? '%' : ''));
-    tr.appendChild(servCell);
-
-    tbody.appendChild(tr);
-  }
+  const rows = stores.map(s => buildHealthRow(s, opsRows, range));
+  renderSortableTable('health-table', HEALTH_COLUMNS, rows, healthSortState);
 }
 
 // ---------- boot ----------
@@ -739,7 +847,7 @@ function renderAll({ dashboard, opsRows, storeHours }) {
     btn.addEventListener('click', () => {
       const filtered = window.Alerts.filterByCategory(dashboard.stores, btn.dataset.category);
       renderStoreCards(filtered, severityMap, storeHours);
-      renderDetailTable(filtered, opsRows, storeHours, currentRange);
+      renderDetailTable(filtered, opsRows, currentRange);
       renderHealthTable(filtered, opsRows, currentRange);
       document.querySelectorAll('.category-filter button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -752,7 +860,7 @@ function renderAll({ dashboard, opsRows, storeHours }) {
 
   const rerenderTables = (range) => {
     currentRange = range;
-    renderDetailTable(baseStores, opsRows, storeHours, range);
+    renderDetailTable(baseStores, opsRows, range);
     renderHealthTable(baseStores, opsRows, range);
   };
 

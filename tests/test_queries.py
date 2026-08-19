@@ -42,12 +42,13 @@ def test_online_and_dine_in_queries_select_order_count():
     assert "count(*) AS order_count" in build_dine_in_revenue_query(STORES, START, END)
 
 
-def test_ops_metrics_query_computes_cancellation_and_kpt():
+def test_ops_metrics_query_computes_cancellation_and_kpt_p80():
     sql = build_ops_metrics_query(STORES, START, END)
     assert "'Acknowledged'" in sql
     assert "'Food Ready'" in sql
     assert "cancelled_orders" in sql
-    assert "avg_kpt_minutes" in sql
+    assert "quantileIf(0.8)" in sql
+    assert "kpt_p80_minutes" in sql
     assert "channel IN ('swiggy', 'zomato')" in sql
 
 

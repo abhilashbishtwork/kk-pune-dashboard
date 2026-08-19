@@ -59,7 +59,7 @@ def build_dashboard_payload(online_rows, dine_in_rows, ops_metric_rows, launch_d
         key = r["store_name"]
         total = int(r["total_orders"])
         cancelled = int(r["cancelled_orders"])
-        kpt_raw = r.get("avg_kpt_minutes", "")
+        kpt_raw = r.get("kpt_p80_minutes", "")
         by_store_ops.setdefault(key, []).append({
             "date": r["order_date"],
             "platform": r["channel"].capitalize(),
@@ -67,9 +67,11 @@ def build_dashboard_payload(online_rows, dine_in_rows, ops_metric_rows, launch_d
             "cancelled_orders": cancelled,
             # Raw counts (not a pre-computed %) so a UI can correctly
             # aggregate cancellation over any date range without
-            # double-rounding; kpt_minutes stays a per-day average, combined
-            # across days with an order_count-weighted mean.
-            "kpt_minutes": round(float(kpt_raw), 1) if kpt_raw not in ("", None, "nan") else None,
+            # double-rounding. kpt_p80_minutes is the P80 for that single
+            # day — combining across a multi-day range (an order-count
+            # weighted mean of daily P80s) is an approximation, not a true
+            # range-level P80, since percentiles don't average validly.
+            "kpt_p80_minutes": round(float(kpt_raw), 1) if kpt_raw not in ("", None, "nan", "\\N") else None,
         })
 
     complete_dates = sorted({d for (_, d) in by_store_date if d != today_str})

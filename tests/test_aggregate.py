@@ -74,9 +74,9 @@ def test_all_thirteen_stores_present():
 def test_ops_computed_cancellation_and_kpt():
     ops_metric_rows = [
         {"order_date": "2026-08-17", "store_name": "PNQ KK Pimpri", "channel": "swiggy",
-         "total_orders": "20", "cancelled_orders": "2", "avg_kpt_minutes": "3.4"},
+         "total_orders": "20", "cancelled_orders": "2", "kpt_p80_minutes": "3.4"},
         {"order_date": "2026-08-18", "store_name": "PNQ KK Pimpri", "channel": "swiggy",
-         "total_orders": "5", "cancelled_orders": "0", "avg_kpt_minutes": "1.1"},
+         "total_orders": "5", "cancelled_orders": "0", "kpt_p80_minutes": "1.1"},
     ]
     payload = build_dashboard_payload([], [], ops_metric_rows, [], date(2026, 8, 18))
     pimpri = next(s for s in payload["stores"] if s["up_name"] == "PNQ KK Pimpri")
@@ -87,17 +87,23 @@ def test_ops_computed_cancellation_and_kpt():
     assert ops_daily[0]["platform"] == "Swiggy"
     assert ops_daily[0]["order_count"] == 20
     assert ops_daily[0]["cancelled_orders"] == 2
-    assert ops_daily[0]["kpt_minutes"] == 3.4
+    assert ops_daily[0]["kpt_p80_minutes"] == 3.4
 
 
 def test_ops_computed_missing_kpt_pairs_gives_null():
     ops_metric_rows = [
         {"order_date": "2026-08-17", "store_name": "PNQ KK Pimpri", "channel": "zomato",
-         "total_orders": "0", "cancelled_orders": "0", "avg_kpt_minutes": ""},
+         "total_orders": "0", "cancelled_orders": "0", "kpt_p80_minutes": ""},
+        {"order_date": "2026-08-16", "store_name": "PNQ KK Pimpri", "channel": "swiggy",
+         # ClickHouse's quantileIf returns the literal TSV null marker, not "nan",
+         # when a group has zero rows matching the condition.
+         "total_orders": "0", "cancelled_orders": "0", "kpt_p80_minutes": "\\N"},
     ]
     payload = build_dashboard_payload([], [], ops_metric_rows, [], date(2026, 8, 18))
     pimpri = next(s for s in payload["stores"] if s["up_name"] == "PNQ KK Pimpri")
-    entry = pimpri["ops_computed"]["daily"][0]
-    assert entry["order_count"] == 0
-    assert entry["cancelled_orders"] == 0
-    assert entry["kpt_minutes"] is None
+    ops_daily = pimpri["ops_computed"]["daily"]
+    assert len(ops_daily) == 2
+    for entry in ops_daily:
+        assert entry["order_count"] == 0
+        assert entry["cancelled_orders"] == 0
+        assert entry["kpt_p80_minutes"] is None
