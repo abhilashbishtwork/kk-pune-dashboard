@@ -44,6 +44,7 @@ body {
 }
 .kpi.alertcount { border-top-color: var(--crit); }
 .kpi .label { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.kpi .date-badge { font-size: 0.95rem; font-weight: 800; color: var(--brand-dark); margin-top: 2px; }
 .kpi .value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; letter-spacing: -0.02em; }
 .kpi.alertcount .value { color: var(--crit); }
 .kpi .sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
@@ -66,8 +67,12 @@ body {
   font-size: 0.85rem; color: var(--brand); text-decoration: none; font-weight: 600;
 }
 
-/* ---------- category pills ---------- */
-.category-filter { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+/* ---------- category pills (sticky, stacked directly above the date-range row) ---------- */
+.category-filter {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  position: sticky; top: 0; z-index: 21; background: var(--bg);
+  padding: 14px 0 10px;
+}
 .category-filter button {
   padding: 7px 16px;
   border: 1px solid var(--border);
@@ -136,7 +141,7 @@ section > h2 { font-size: 1.15rem; margin: 0 0 12px; display: flex; align-items:
 /* ---------- date range row (sticky — drives tables AND card graphs below it) ---------- */
 .date-range-row {
   display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;
-  position: sticky; top: 0; z-index: 20; background: var(--bg);
+  position: sticky; top: 52px; z-index: 20; background: var(--bg);
   padding: 12px 0; box-shadow: 0 4px 10px -4px rgba(20,24,26,0.12);
 }
 .date-range-row label { font-size: 0.82rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }

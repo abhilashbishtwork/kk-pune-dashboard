@@ -159,6 +159,14 @@ function fmtMoneyCompact(n) {
   return sign + '₹' + Math.round(n);
 }
 
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function fmtDateLabel(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return `${d} ${MONTH_ABBR[m - 1]} ${y}`;
+}
+
 function fmtPct(n, decimals) {
   return n.toFixed(decimals === undefined ? 1 : decimals) + '%';
 }
@@ -358,25 +366,29 @@ function renderKpis(k) {
   const el = document.getElementById('kpis');
   el.innerHTML = '';
 
-  // 1. Yesterday's revenue
+  // 1. Revenue — labeled with the actual date (not "yesterday") to avoid
+  // any confusion about which day these three day-level cards refer to.
   const c1 = kpiCard();
-  addKpiText(c1, 'label', "Yesterday's revenue");
+  addKpiText(c1, 'label', 'Revenue');
+  addKpiText(c1, 'date-badge', fmtDateLabel(k.yesterday));
   addKpiText(c1, 'value', fmtMoneyCompact(k.yToday.total));
   const wow1 = wowLabel(k.yToday.total, k.yPrior.total);
   if (wow1) addKpiText(c1, 'sub' + (wow1.dir ? ' ' + wow1.dir : ''), wow1.text || wow1);
   el.appendChild(c1);
 
-  // 2. Online revenue (yesterday)
+  // 2. Online revenue, same date
   const c2 = kpiCard();
   addKpiText(c2, 'label', 'Online revenue');
+  addKpiText(c2, 'date-badge', fmtDateLabel(k.yesterday));
   addKpiText(c2, 'value', fmtMoneyCompact(k.yToday.online));
   const wow2 = wowLabel(k.yToday.online, k.yPrior.online);
   if (wow2) addKpiText(c2, 'sub' + (wow2.dir ? ' ' + wow2.dir : ''), wow2.text || wow2);
   el.appendChild(c2);
 
-  // 3. Offline (dine-in) revenue (yesterday)
+  // 3. Offline (dine-in) revenue, same date
   const c3 = kpiCard();
   addKpiText(c3, 'label', 'Offline revenue');
+  addKpiText(c3, 'date-badge', fmtDateLabel(k.yesterday));
   addKpiText(c3, 'value', fmtMoneyCompact(k.yToday.dine_in));
   const wow3 = wowLabel(k.yToday.dine_in, k.yPrior.dine_in);
   if (wow3) addKpiText(c3, 'sub' + (wow3.dir ? ' ' + wow3.dir : ''), wow3.text || wow3);
