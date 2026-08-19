@@ -27,7 +27,7 @@ def test_online_query_excludes_cancelled_via_state_transitions():
     sql = build_online_revenue_query(STORES, START, END)
     assert "orders_state_transitions" in sql
     assert "'Cancelled', 'customer_cancelled'" in sql
-    assert "t.brand_id = " in sql and "t.order_id = o.order_id" in sql
+    assert "t.brand_id = " in sql and "t.order_id = o.id" in sql
 
 
 def test_dine_in_query_filters_pos_channel():

@@ -1,6 +1,7 @@
 """Thin ClickHouse HTTP client for the KK Pune build pipeline."""
 
 import subprocess
+from urllib.parse import quote
 
 CLICKHOUSE_URL = "https://cfi-data-secure.urbanpiper.com:443/"
 CLICKHOUSE_DATABASE = "curefoods_test"
@@ -24,10 +25,11 @@ def parse_tsv_with_names(text):
 
 
 def run_query(sql, password):
+    encoded_password = quote(password, safe="")
     result = subprocess.run(
         [
             "curl", "-sk", "--max-time", "30",
-            f"{CLICKHOUSE_URL}?database={CLICKHOUSE_DATABASE}&user={CLICKHOUSE_USER}&password={password}",
+            f"{CLICKHOUSE_URL}?database={CLICKHOUSE_DATABASE}&user={CLICKHOUSE_USER}&password={encoded_password}",
             "--data", sql,
         ],
         capture_output=True, text=True, check=True,

@@ -26,7 +26,7 @@ def build_online_revenue_query(store_names, start_date, end_date):
             FROM orders_state_transitions
             WHERE brand_id = {BRAND_ID}
             GROUP BY brand_id, order_id
-        ) t ON t.brand_id = {BRAND_ID} AND t.order_id = o.order_id
+        ) t ON t.brand_id = {BRAND_ID} AND t.order_id = o.id
         WHERE o.brand_id = {BRAND_ID}
           AND o.store_name IN ({stores_sql})
           AND o.channel IN ('swiggy', 'zomato', 'ownly')

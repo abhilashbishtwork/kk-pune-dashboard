@@ -32,7 +32,10 @@ def run(query_runner, today):
     dine_in_rows = query_runner(build_dine_in_revenue_query(stores, start_date, today))
     launch_date_rows = query_runner(build_launch_date_query(stores))
 
-    if not is_pull_valid(online_rows, dine_in_rows, launch_date_rows):
+    # 11, not 13: as of Aug 2026, Ravet and FB Baner are newly launched and
+    # genuinely have zero orders yet in ClickHouse. Raise back to 13 (the
+    # sanity_guard default) once both have their first recorded order.
+    if not is_pull_valid(online_rows, dine_in_rows, launch_date_rows, expected_min_stores=11):
         print("ClickHouse pull failed sanity check — keeping existing data.json", file=sys.stderr)
         return False
 

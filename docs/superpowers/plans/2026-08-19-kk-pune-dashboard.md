@@ -273,7 +273,7 @@ def test_online_query_excludes_cancelled_via_state_transitions():
     sql = build_online_revenue_query(STORES, START, END)
     assert "orders_state_transitions" in sql
     assert "'Cancelled', 'customer_cancelled'" in sql
-    assert "t.brand_id = " in sql and "t.order_id = o.order_id" in sql
+    assert "t.brand_id = " in sql and "t.order_id = o.id" in sql
 
 
 def test_dine_in_query_filters_pos_channel():
@@ -336,7 +336,7 @@ def build_online_revenue_query(store_names, start_date, end_date):
             FROM orders_state_transitions
             WHERE brand_id = {BRAND_ID}
             GROUP BY brand_id, order_id
-        ) t ON t.brand_id = {BRAND_ID} AND t.order_id = o.order_id
+        ) t ON t.brand_id = {BRAND_ID} AND t.order_id = o.id
         WHERE o.brand_id = {BRAND_ID}
           AND o.store_name IN ({stores_sql})
           AND o.channel IN ('swiggy', 'zomato', 'ownly')
@@ -443,6 +443,7 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'build.clickhouse_clie
 """Thin ClickHouse HTTP client for the KK Pune build pipeline."""
 
 import subprocess
+from urllib.parse import quote
 
 CLICKHOUSE_URL = "https://cfi-data-secure.urbanpiper.com:443/"
 CLICKHOUSE_DATABASE = "curefoods_test"
@@ -466,10 +467,11 @@ def parse_tsv_with_names(text):
 
 
 def run_query(sql, password):
+    encoded_password = quote(password, safe="")
     result = subprocess.run(
         [
             "curl", "-sk", "--max-time", "30",
-            f"{CLICKHOUSE_URL}?database={CLICKHOUSE_DATABASE}&user={CLICKHOUSE_USER}&password={password}",
+            f"{CLICKHOUSE_URL}?database={CLICKHOUSE_DATABASE}&user={CLICKHOUSE_USER}&password={encoded_password}",
             "--data", sql,
         ],
         capture_output=True, text=True, check=True,
@@ -850,7 +852,10 @@ def run(query_runner, today):
     dine_in_rows = query_runner(build_dine_in_revenue_query(stores, start_date, today))
     launch_date_rows = query_runner(build_launch_date_query(stores))
 
-    if not is_pull_valid(online_rows, dine_in_rows, launch_date_rows):
+    # 11, not 13: as of Aug 2026, Ravet and FB Baner are newly launched and
+    # genuinely have zero orders yet in ClickHouse. Raise back to 13 (the
+    # sanity_guard default) once both have their first recorded order.
+    if not is_pull_valid(online_rows, dine_in_rows, launch_date_rows, expected_min_stores=11):
         print("ClickHouse pull failed sanity check — keeping existing data.json", file=sys.stderr)
         return False
 
@@ -897,18 +902,24 @@ git commit -m "Add build orchestrator wiring ClickHouse pull to data.json"
 
 ---
 
-### Task 8: Ops Google Sheet + published CSV
+### Task 8: Ops metrics data file
+
+**Amendment (2026-08-19, during implementation):** the original version of
+this task published a Google Sheet as CSV. That's blocked — Curefoods'
+Workspace policy disables "Anyone with the link" sharing domain-wide,
+confirmed by reproducing the "Sorry, sharing is unavailable" error twice
+from a file sitting in My Drive (not a Shared Drive, so it's a real policy
+block, not a location quirk). A file committed to the repo replaces it with
+no loss of capability.
 
 **Files:**
-- None in the repo yet (this task produces a Sheet ID and a CSV URL used by Task 10).
+- Create: `ops_metrics.csv`
 
 **Interfaces:**
-- Produces: `CSV_URL` (a `https://docs.google.com/spreadsheets/d/<SHEET_ID>/gviz/tq?tqx=out:csv&sheet=PuneOpsMetrics` URL), fetchable with no authentication. Consumed by Task 10's `dashboard.js`.
-- The sheet's `PuneOpsMetrics` tab columns (consumed by Task 10's CSV parser): `Date, Store, Platform, Availability%, Serviceability%, KPT, Cancellation%, Rating`. `Store` values must match the roster's `display_name` values from Task 2 exactly.
+- Produces: `ops_metrics.csv`, fetchable via a same-origin relative fetch from `index.html` (no CORS, no auth). Consumed by Task 10's `dashboard.js`.
+- Columns (consumed by Task 10's CSV parser): `Date, Store, Platform, Availability%, Serviceability%, KPT, Cancellation%, Rating`. `Store` values must match the roster's `display_name` values from Task 2 exactly.
 
-- [ ] **Step 1: Create the spreadsheet**
-
-Use the Google Drive MCP tool to create a new Google Sheet named "KK Pune Ops Metrics" with one tab `PuneOpsMetrics`, header row plus a couple of example rows so the shape is obvious to whoever edits it next:
+- [ ] **Step 1: Write `ops_metrics.csv`**
 
 ```
 Date,Store,Platform,Availability%,Serviceability%,KPT,Cancellation%,Rating
@@ -917,28 +928,16 @@ Date,Store,Platform,Availability%,Serviceability%,KPT,Cancellation%,Rating
 2026-08-18,PNQ Pimpri,Google,,,,,4.5
 ```
 
-Record the resulting file's Sheet ID.
-
-- [ ] **Step 2: Share it as "Anyone with the link – Viewer"**
-
-Use the Google Drive MCP tool's sharing action on that file to set link-sharing to viewer access for anyone with the link (not organization-restricted — the ground team and anyone building on this must not need a Google login to read it).
-
-- [ ] **Step 3: Build the CSV URL and record it**
-
-```
-CSV_URL = https://docs.google.com/spreadsheets/d/<SHEET_ID>/gviz/tq?tqx=out:csv&sheet=PuneOpsMetrics
-```
-
-- [ ] **Step 4: Verify anonymous fetch works**
+- [ ] **Step 2: Commit it**
 
 ```bash
-curl -s "https://docs.google.com/spreadsheets/d/<SHEET_ID>/gviz/tq?tqx=out:csv&sheet=PuneOpsMetrics"
+git add ops_metrics.csv
+git commit -m "Add ops metrics data file (replaces blocked Google Sheet approach)"
 ```
-Expected: raw CSV text (starting with the header row), not an HTML login/redirect page. If it redirects to `accounts.google.com`, the sharing setting from Step 2 did not take — redo it.
 
-- [ ] **Step 5: Note the URL for Task 10**
+- [ ] **Step 3: Note how this gets updated going forward**
 
-Write the confirmed `CSV_URL` down — Task 10 hardcodes it into `assets/dashboard.js`.
+Ops (or Abhilash, on their behalf) edits `ops_metrics.csv` directly — via the GitHub web editor, or by sending updated numbers to be committed — and pushes. GitHub Pages redeploys automatically; the dashboard picks up the new numbers on next page load, no rebuild step needed.
 
 ---
 
@@ -1107,7 +1106,7 @@ git commit -m "Add pure alert-threshold and category-filter logic"
 - Create: `assets/dashboard.js`
 
 **Interfaces:**
-- Consumes: `data.json` (Task 7's shape, fetched relative to the page), the ops CSV at `CSV_URL` (Task 8), `window.Alerts` (Task 9, loaded via `<script src="assets/alerts.js">` before `dashboard.js`).
+- Consumes: `data.json` (Task 7's shape, fetched relative to the page), `ops_metrics.csv` (Task 8, fetched relative to the page — same-origin, no external URL needed), `window.Alerts` (Task 9, loaded via `<script src="assets/alerts.js">` before `dashboard.js`).
 - Produces: the rendered page — no further tasks consume this module programmatically.
 
 - [ ] **Step 1: Write `assets/dashboard.css`**
@@ -1161,7 +1160,7 @@ th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--bor
 // assets/dashboard.js
 'use strict';
 
-const CSV_URL = 'REPLACE_WITH_SHEET_CSV_URL_FROM_TASK_8';
+const CSV_URL = 'ops_metrics.csv';
 
 const THRESHOLDS = {
   availability_pct: 90,
@@ -1377,11 +1376,7 @@ loadData().then(renderAll).catch(err => {
 </html>
 ```
 
-- [ ] **Step 4: Set the real CSV URL**
-
-Replace `REPLACE_WITH_SHEET_CSV_URL_FROM_TASK_8` in `assets/dashboard.js` with the URL confirmed in Task 8, Step 3.
-
-- [ ] **Step 5: Syntax-check and manually verify locally**
+- [ ] **Step 4: Syntax-check and manually verify locally**
 
 ```bash
 node --check assets/dashboard.js

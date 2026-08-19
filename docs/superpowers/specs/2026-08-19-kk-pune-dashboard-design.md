@@ -57,8 +57,18 @@ before a store existed.
 | Online revenue (Swiggy/Zomato/Ownly) | ClickHouse `orders`, `brand_id=95469015`, `store_name` IN (13 UP names), `channel` IN ('swiggy','zomato','ownly') | Daily local pull |
 | Offline/dine-in revenue | Same ClickHouse table, `channel='pos'` | Daily local pull |
 | Store `launch_date` | `MIN(created_at_ist)` per store_name, ClickHouse | Daily local pull |
-| Availability %, Serviceability %, KPT, Cancellation % | Manual entry, per store × platform (Swiggy/Zomato/Google) × day, in a Google Sheet ops maintains | Live read, client-side, on every page load |
-| Ratings (Swiggy/Zomato/Google) | Same Sheet, per store × platform, with a last-updated date | Live read, client-side, on every page load |
+| Availability %, Serviceability %, KPT, Cancellation % | Manual entry, per store × platform (Swiggy/Zomato/Google) × day, in `ops_metrics.csv` committed to the dashboard's own GitHub repo | Read client-side on every page load; updated by editing and pushing the file |
+| Ratings (Swiggy/Zomato/Google) | Same file, per store × platform, with a last-updated date | Read client-side on every page load; updated by editing and pushing the file |
+
+**Amendment (2026-08-19, during implementation):** the original design called for
+this data to live in a Google Sheet published as CSV. That was blocked in
+practice — Curefoods' Workspace policy disables "Anyone with the link"
+sharing domain-wide, which the dashboard's no-login requirement depends on.
+`ops_metrics.csv` committed directly to the public GitHub repo replaces the
+Sheet with no loss of capability: still no-login for viewers, still editable
+by anyone with repo write access (via the GitHub web editor or a commit),
+and the read side is unchanged (a CSV fetch) so the eventual automation
+path in §6 is unaffected.
 
 Revenue formula (validated, reused from prior work):
 `sub_total_amount − (discount − aggregator_discount) + charges`,
@@ -102,10 +112,13 @@ outright.)
   - Includes a sanity guard: abort (keep yesterday's `data.json`) if
     the pull returns implausibly few rows, so a bad query can't wipe
     the dashboard.
-- The manual-entry Google Sheet is Published to the Web as CSV. The
-  static page fetches that CSV directly, client-side, on every load —
-  so ops edits to availability/serviceability/KPT/cancellation/ratings
-  show up immediately with no rebuild required.
+- Manual ops/ratings data lives in `ops_metrics.csv`, committed to the
+  same public repo. The static page fetches that file directly,
+  client-side, on every load — so ops edits to
+  availability/serviceability/KPT/cancellation/ratings show up as soon
+  as the edit is pushed, with no separate rebuild step required (a
+  plain `git push` to the file is enough; GitHub Pages redeploys
+  automatically).
 - **Known limitation**: the daily ClickHouse refresh depends on a
   laptop-based `launchd` cron (same as other live dashboards today,
   e.g. the Bengaluru Order Map). Acceptable for a 15-day sprint;
