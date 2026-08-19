@@ -7,38 +7,36 @@
   <link rel="stylesheet" href="assets/dashboard.css">
 </head>
 <body>
-  <header>
-    <h1>Krispy Kreme · Pune</h1>
-    <p id="generated-at"></p>
-  </header>
+  <div class="wrap">
+    <div class="top">
+      <h1>Krispy Kreme <span class="dot">·</span> Pune</h1>
+      <p id="generated-at"></p>
+    </div>
 
-  <section class="category-filter">
-    <button data-category="All" class="active">All (13)</button>
-    <button data-category="Cfi">Cfi (5)</button>
-    <button data-category="Rebel">Rebel (4)</button>
-    <button data-category="Offline">Offline (4)</button>
-  </section>
+    <div class="kpis" id="kpis"></div>
 
-  <section id="alerts">
-    <h2>What's not working</h2>
-    <ul id="alerts-list"></ul>
-  </section>
+    <section class="category-filter">
+      <button data-category="All" class="active">All · 13 stores</button>
+      <button data-category="Cfi">Cfi · 5</button>
+      <button data-category="Rebel">Rebel · 4</button>
+      <button data-category="Offline">Offline · 4</button>
+    </section>
 
-  <section id="revenue">
-    <h2>Revenue</h2>
-    <table>
-      <thead><tr><th>Store</th><th>Category</th><th>Latest day</th><th>WTD</th><th>MTD</th><th>Launch date</th></tr></thead>
-      <tbody id="revenue-body"></tbody>
-    </table>
-  </section>
+    <section id="alerts">
+      <h2>🚨 What's not working</h2>
+      <ul id="alerts-list"></ul>
+    </section>
 
-  <section id="ops">
-    <h2>Storefront ops &amp; ratings</h2>
-    <table>
-      <thead><tr><th>Store</th><th>Platform</th><th>Availability %</th><th>Serviceability %</th><th>KPT</th><th>Cancellation %</th><th>Rating</th><th>Last updated</th></tr></thead>
-      <tbody id="ops-body"></tbody>
-    </table>
-  </section>
+    <section id="revenue">
+      <h2>💰 Revenue by store</h2>
+      <div class="store-grid" id="store-grid"></div>
+    </section>
+
+    <section id="ops">
+      <h2>📊 Storefront ops &amp; ratings</h2>
+      <div class="ops-grid" id="ops-grid"></div>
+    </section>
+  </div>
 
   <script src="assets/alerts.js"></script>
   <script src="assets/dashboard.js"></script>

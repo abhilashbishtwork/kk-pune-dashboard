@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from build.stores import STORE_ROSTER
+from build.stores import STORE_ROSTER, up_name_for_pos_name
 
 
 def _empty_channel_totals():
@@ -29,7 +29,12 @@ def build_dashboard_payload(online_rows, dine_in_rows, launch_date_rows, today_i
         entry = by_store_date.setdefault(key, {"online": _empty_channel_totals(), "dine_in": 0.0})
         entry["online"][r["channel"]] = entry["online"].get(r["channel"], 0.0) + float(r["revenue"])
     for r in dine_in_rows:
-        key = (r["store_name"], r["order_date"])
+        # dine_in_rows are keyed by the POS-channel store_name, which differs
+        # from the online up_name for the same physical store — map back.
+        up_name = up_name_for_pos_name(r["store_name"])
+        if up_name is None:
+            continue
+        key = (up_name, r["order_date"])
         entry = by_store_date.setdefault(key, {"online": _empty_channel_totals(), "dine_in": 0.0})
         entry["dine_in"] += float(r["revenue"])
 

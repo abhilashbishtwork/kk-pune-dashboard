@@ -38,8 +38,12 @@ def build_online_revenue_query(store_names, start_date, end_date):
     """.strip()
 
 
-def build_dine_in_revenue_query(store_names, start_date, end_date):
-    stores_sql = _store_list_sql(store_names)
+def build_dine_in_revenue_query(pos_store_names, start_date, end_date):
+    """`pos_store_names` are the dine-in-channel store_name strings (see
+    `build.stores.pos_names()`) — NOT the online `up_name` strings. ClickHouse
+    tags the same physical store differently across channels, confirmed by a
+    full scan on 2026-08-19."""
+    stores_sql = _store_list_sql(pos_store_names)
     return f"""
         SELECT
             toDate(o.created_at_ist) AS order_date,

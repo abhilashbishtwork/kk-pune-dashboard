@@ -21,9 +21,9 @@ def test_run_writes_data_json_on_valid_pull(tmp_path, monkeypatch):
     online_rows = [{"order_date": "2026-08-17", "store_name": "PNQ KK Pimpri", "channel": "swiggy", "revenue": "100"}]
     launch_date_rows = [{"store_name": s, "launch_date": "2025-01-01"} for s in [
         "PNQ KK Tribeca", "PNQ KK Amanora", "PNQ KK Pimpri", "PNQ KK Kothrud",
-        "PNQ KK Viman Nagar", "PNQ KK Wagholi", "KK Ravet Cloud", "PNQ KK Dhanori",
+        "PNQ KK Viman Nagar", "PNQ KK Wagholi", "PNQ KK Ravet", "PNQ KK Dhanori",
         "PNQ KK Hinjewadi", "PNQ KK Law College", "PNQ KK Sangvi",
-        "PNQ KK Niyati Plaza", "PNQ KK FB Baner",
+        "PNQ KK Niyati Plaza", "PNQ KK Baner",
     ]]
     runner = _fake_runner(online_rows, [], launch_date_rows)
 
