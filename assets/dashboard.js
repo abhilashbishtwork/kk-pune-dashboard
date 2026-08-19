@@ -572,17 +572,19 @@ function renderDateRangeRow(availableDates, range, onChange) {
   const presets = document.createElement('div');
   presets.className = 'presets';
   const presetDefs = [
-    { label: '7d', days: 7 },
-    { label: '30d', days: 30 },
+    { label: 'Yesterday', yesterday: true },
+    { label: '7 Days', days: 7 },
+    { label: '30 Days', days: 30 },
     { label: 'MTD', mtd: true },
-    { label: 'All', all: true },
+    { label: 'Since Launch', all: true },
   ];
   for (const p of presetDefs) {
     const btn = document.createElement('button');
     btn.textContent = p.label;
     btn.addEventListener('click', () => {
       let start;
-      if (p.all) start = min;
+      if (p.yesterday) start = max;
+      else if (p.all) start = min;
       else if (p.mtd) start = max.slice(0, 8) + '01';
       else start = availableDates[Math.max(0, availableDates.length - p.days)];
       startInput.value = start < min ? min : start;
@@ -718,23 +720,23 @@ const DETAIL_COLUMNS = [
   { label: 'Type', value: r => r.type, display: r => r.type },
   { label: 'Store', value: r => r.store, display: r => r.store, storeCell: true },
   {
-    label: "Rev/day (₹'000)", value: r => r.revPerDay, numeric: true,
-    render: (cell, r) => {
-      if (r.revPerDay === null) { cell.textContent = r.prelaunch ? 'Pre-launch' : '—'; return; }
-      cell.appendChild(scaledChip(fmtThousands(r.revPerDay), r.revPerDay, 'minRevPerDay'));
-    },
-  },
-  {
     label: 'OPD', value: r => r.opd, numeric: true,
     render: (cell, r) => {
       if (r.opd === null) { cell.textContent = '—'; return; }
       cell.appendChild(scaledChip(r.opd.toFixed(1), r.opd, 'minOrdersPerDay'));
     },
   },
-  { label: "On-RPD (₹'000)", value: r => r.onRpd, numeric: true, display: r => r.onRpd === null ? '—' : fmtThousands(r.onRpd) },
-  { label: "Of-RPD (₹'000)", value: r => r.hasOffline ? r.ofRpd : null, numeric: true, display: r => !r.hasOffline ? '-' : (r.ofRpd === null ? '—' : fmtThousands(r.ofRpd)) },
   { label: 'On-OPD', value: r => r.onOpd, numeric: true, display: r => r.onOpd === null ? '—' : r.onOpd.toFixed(1) },
   { label: 'Of-OPD', value: r => r.hasOffline ? r.ofOpd : null, numeric: true, display: r => !r.hasOffline ? '-' : (r.ofOpd === null ? '—' : r.ofOpd.toFixed(1)) },
+  {
+    label: 'Rev/day (k)', value: r => r.revPerDay, numeric: true,
+    render: (cell, r) => {
+      if (r.revPerDay === null) { cell.textContent = r.prelaunch ? 'Pre-launch' : '—'; return; }
+      cell.appendChild(scaledChip(fmtThousands(r.revPerDay), r.revPerDay, 'minRevPerDay'));
+    },
+  },
+  { label: 'On-Rev/day (k)', value: r => r.onRpd, numeric: true, display: r => r.onRpd === null ? '—' : fmtThousands(r.onRpd) },
+  { label: 'Of-Rev/day (k)', value: r => r.hasOffline ? r.ofRpd : null, numeric: true, display: r => !r.hasOffline ? '-' : (r.ofRpd === null ? '—' : fmtThousands(r.ofRpd)) },
   { label: 'Swiggy', value: r => r.swiggyRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.swiggyRating, r.swiggyReviews) },
   { label: 'Zomato', value: r => r.zomatoRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.zomatoRating, r.zomatoReviews) },
   { label: 'Google', value: r => r.googleRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.googleRating, r.googleReviews) },
