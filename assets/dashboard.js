@@ -427,19 +427,10 @@ function renderKpis(k) {
   c5.appendChild(split5);
   el.appendChild(c5);
 
-  // 6. Open issues
-  const c6 = kpiCard();
-  if (k.alertCount > 0) c6.classList.add('alertcount');
-  addKpiText(c6, 'label', 'Open issues');
-  addKpiText(c6, 'value', String(k.alertCount));
-  el.appendChild(c6);
-
-  // 7. Google reviews (called out separately per request — total as of latest entry)
-  const c7 = kpiCard();
-  addKpiText(c7, 'label', 'Google reviews');
-  addKpiText(c7, 'value', k.googleReviews !== null ? String(k.googleReviews) : '—');
-  addKpiText(c7, 'sub', k.googleReviews !== null ? 'latest total, all stores' : 'no Google rows in ops_metrics.csv yet');
-  el.appendChild(c7);
+  // Open issues and Google reviews KPI cards removed for now (per request) —
+  // to be added back later. The underlying data (k.alertCount,
+  // k.googleReviews) is still computed and used elsewhere (alerts list,
+  // store status dots), just not surfaced as its own KPI card right now.
 }
 
 // ---------- alerts ----------
