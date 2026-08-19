@@ -15,10 +15,10 @@ function computeAlerts(stores, opsRows, thresholds, todayStr) {
       const todayEntry = store.revenue.daily.find(d => d.date === todayStr);
       const hasAnyHistory = store.revenue.daily.some(d => d.date < todayStr);
       if (hasAnyHistory && (!todayEntry || todayEntry.total === 0)) {
-        alerts.push({ store: store.display_name, type: 'zero_revenue', detail: `No revenue recorded for ${todayStr}` });
+        alerts.push({ store: store.display_name, type: 'zero_revenue', value: '₹0', detail: `No revenue recorded for ${todayStr}` });
       }
       if (todayEntry && todayEntry.online_orders < thresholds.min_online_opd) {
-        alerts.push({ store: store.display_name, type: 'low_online_opd', detail: `Only ${todayEntry.online_orders} online orders on ${todayStr} (< ${thresholds.min_online_opd})` });
+        alerts.push({ store: store.display_name, type: 'low_online_opd', value: `${todayEntry.online_orders} orders`, detail: `Only ${todayEntry.online_orders} online orders on ${todayStr} (< ${thresholds.min_online_opd})` });
       }
     }
 
@@ -37,34 +37,34 @@ function computeAlerts(stores, opsRows, thresholds, todayStr) {
       const cancellationPct = orders > 0 ? (cancelled / orders) * 100 : null;
       const kptP80 = kptWeight > 0 ? kptWeightedSum / kptWeight : null;
       if (cancellationPct !== null && cancellationPct > thresholds.cancellation_alert_pct) {
-        alerts.push({ store: store.display_name, type: 'cancellation_high', detail: `Cancellation ${cancellationPct.toFixed(1)}% > ${thresholds.cancellation_alert_pct}%` });
+        alerts.push({ store: store.display_name, type: 'cancellation_high', value: `${cancellationPct.toFixed(1)}%`, detail: `Cancellation ${cancellationPct.toFixed(1)}% > ${thresholds.cancellation_alert_pct}%` });
       }
       if (kptP80 !== null && kptP80 > thresholds.kpt_p80_max_minutes) {
-        alerts.push({ store: store.display_name, type: 'kpt_high', detail: `KPT P80 ${kptP80.toFixed(1)} min > ${thresholds.kpt_p80_max_minutes} min` });
+        alerts.push({ store: store.display_name, type: 'kpt_high', value: `${kptP80.toFixed(1)} min`, detail: `KPT P80 ${kptP80.toFixed(1)} min > ${thresholds.kpt_p80_max_minutes} min` });
       }
     }
 
     const storeOps = opsRows.filter(r => r.store === store.display_name);
 
-    if (!storeOps.some(r => r.platform === 'Zomato')) {
-      alerts.push({ store: store.display_name, type: 'missing_zomato_rating', detail: 'Zomato listing not live / no rating entered yet' });
+    if (!storeOps.some(r => r.platform === 'Zomato' && r.rating !== null)) {
+      alerts.push({ store: store.display_name, type: 'rating', platform: 'Zomato', value: 'not live', detail: 'Zomato listing not live / no rating entered yet' });
     }
 
     for (const row of storeOps) {
       if (row.availability !== null && row.availability < thresholds.availability_pct) {
-        alerts.push({ store: store.display_name, type: 'availability', detail: `${row.platform} availability ${row.availability}% < ${thresholds.availability_pct}%` });
+        alerts.push({ store: store.display_name, type: 'availability', platform: row.platform, value: `${row.availability}%`, detail: `${row.platform} availability ${row.availability}% < ${thresholds.availability_pct}%` });
       }
       if (row.serviceability !== null && row.serviceability < thresholds.serviceability_pct) {
-        alerts.push({ store: store.display_name, type: 'serviceability', detail: `${row.platform} serviceability ${row.serviceability}% < ${thresholds.serviceability_pct}%` });
+        alerts.push({ store: store.display_name, type: 'serviceability', platform: row.platform, value: `${row.serviceability}%`, detail: `${row.platform} serviceability ${row.serviceability}% < ${thresholds.serviceability_pct}%` });
       }
       if (row.cancellation !== null && row.cancellation > thresholds.cancellation_pct) {
-        alerts.push({ store: store.display_name, type: 'cancellation', detail: `${row.platform} cancellation ${row.cancellation}% > ${thresholds.cancellation_pct}%` });
+        alerts.push({ store: store.display_name, type: 'cancellation_high', value: `${row.cancellation}%`, detail: `${row.platform} cancellation ${row.cancellation}% > ${thresholds.cancellation_pct}%` });
       }
       if (row.rating !== null && row.rating < thresholds.rating_min) {
-        alerts.push({ store: store.display_name, type: 'rating', detail: `${row.platform} rating ${row.rating} < ${thresholds.rating_min}` });
+        alerts.push({ store: store.display_name, type: 'rating', platform: row.platform, value: `${row.rating}★`, detail: `${row.platform} rating ${row.rating} < ${thresholds.rating_min}` });
       }
       if (isStale(row.date, todayStr, thresholds.stale_days)) {
-        alerts.push({ store: store.display_name, type: 'stale', detail: `${row.platform} data last updated ${row.date}` });
+        alerts.push({ store: store.display_name, type: 'stale', platform: row.platform, value: row.date, detail: `${row.platform} data last updated ${row.date}` });
       }
     }
   }

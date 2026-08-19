@@ -450,7 +450,28 @@ function renderKpis(k) {
   // store status dots), just not surfaced as its own KPI card right now.
 }
 
-// ---------- alerts ----------
+// ---------- alerts (grouped by issue type, one compact chip row per group) ----------
+
+const ALERT_GROUP_LABELS = {
+  zero_revenue: 'Zero Revenue',
+  cancellation_high: 'Cancellations',
+  kpt_high: 'Slow KPT',
+  low_online_opd: 'Low Online Orders',
+  availability: 'Availability',
+  serviceability: 'Serviceability',
+  stale: 'Stale Ops Data',
+};
+
+const ALERT_GROUP_ORDER = [
+  'Zero Revenue', 'Cancellations', 'Slow KPT', 'Low Online Orders',
+  'Swiggy Ratings', 'Zomato Ratings', 'Google Ratings',
+  'Availability', 'Serviceability', 'Stale Ops Data',
+];
+
+function alertGroupLabel(a) {
+  if (a.type === 'rating') return `${a.platform} Ratings`;
+  return ALERT_GROUP_LABELS[a.type] || 'Other';
+}
 
 function renderAlerts(alerts) {
   const el = document.getElementById('alerts-list');
@@ -462,16 +483,39 @@ function renderAlerts(alerts) {
     el.appendChild(li);
     return;
   }
+
+  const groups = {};
   for (const a of alerts) {
-    const li = document.createElement('li');
-    const sev = ALERT_SEVERITY[a.type] || 'warn';
-    li.className = 'alert-card' + (sev === 'warn' ? ' sev-warn' : '');
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    badge.textContent = shortName(a.store) + ':';
-    li.appendChild(badge);
-    li.appendChild(document.createTextNode(' ' + a.detail));
-    el.appendChild(li);
+    const label = alertGroupLabel(a);
+    (groups[label] = groups[label] || []).push(a);
+  }
+  const orderedLabels = [
+    ...ALERT_GROUP_ORDER.filter(l => groups[l]),
+    ...Object.keys(groups).filter(l => !ALERT_GROUP_ORDER.includes(l)),
+  ];
+
+  for (const label of orderedLabels) {
+    const groupAlerts = groups[label];
+    const worstSev = groupAlerts.some(a => (ALERT_SEVERITY[a.type] || 'warn') === 'crit') ? 'crit' : 'warn';
+
+    const groupLi = document.createElement('li');
+    groupLi.className = 'alert-group' + (worstSev === 'warn' ? ' sev-warn' : '');
+
+    const heading = document.createElement('div');
+    heading.className = 'alert-group-heading';
+    heading.textContent = `${label} (${groupAlerts.length})`;
+    groupLi.appendChild(heading);
+
+    const chipRow = document.createElement('div');
+    chipRow.className = 'alert-chip-row';
+    for (const a of groupAlerts) {
+      const chip = document.createElement('span');
+      chip.className = 'alert-chip';
+      chip.textContent = a.value ? `${shortName(a.store)} (${a.value})` : shortName(a.store);
+      chipRow.appendChild(chip);
+    }
+    groupLi.appendChild(chipRow);
+    el.appendChild(groupLi);
   }
 }
 
@@ -761,8 +805,15 @@ function buildDetailRow(s, opsRows, range) {
   };
 }
 
+function pendingChip() {
+  const span = document.createElement('span');
+  span.className = 'metric-chip crit';
+  span.textContent = 'Pending';
+  return span;
+}
+
 function ratingChipCell(cell, rating, reviewCount) {
-  if (rating === null) { cell.textContent = '—'; return; }
+  if (rating === null) { cell.appendChild(pendingChip()); return; }
   const text = rating.toFixed(1) + '★' + (reviewCount !== null ? ` (${reviewCount})` : '');
   cell.appendChild(scaledChip(text, rating, 'ratingGood'));
 }
@@ -790,7 +841,13 @@ const DETAIL_COLUMNS = [
   { label: 'Of-Rev/day (k)', value: r => r.hasOffline ? r.ofRpd : null, numeric: true, display: r => !r.hasOffline ? '-' : (r.ofRpd === null ? '—' : fmtThousands(r.ofRpd)) },
   { label: 'Swiggy', value: r => r.swiggyRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.swiggyRating, r.swiggyReviews) },
   { label: 'Zomato', value: r => r.zomatoRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.zomatoRating, r.zomatoReviews) },
-  { label: 'Google', value: r => r.googleRating, numeric: true, render: (cell, r) => ratingChipCell(cell, r.googleRating, r.googleReviews) },
+  {
+    label: 'Google', value: r => r.hasOffline ? r.googleRating : null, numeric: true,
+    render: (cell, r) => {
+      if (!r.hasOffline) { cell.textContent = '-'; return; }
+      ratingChipCell(cell, r.googleRating, r.googleReviews);
+    },
+  },
 ];
 
 const detailSortState = { col: null, dir: 1 };

@@ -55,14 +55,25 @@ test('computeAlerts flags a store with no Zomato rating entered at all', () => {
   const stores = [{ display_name: 'PNQ Ravet', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] } }];
   const opsRows = [{ store: 'PNQ Ravet', platform: 'Swiggy', date: '2026-08-19', availability: null, serviceability: null, cancellation: null, rating: 4.6 }];
   const alerts = computeAlerts(stores, opsRows, THRESHOLDS, '2026-08-19');
-  assert.ok(alerts.some(a => a.type === 'missing_zomato_rating'));
+  assert.ok(alerts.some(a => a.type === 'rating' && a.platform === 'Zomato' && a.value === 'not live'));
+});
+
+test('computeAlerts flags missing Zomato rating even when a blank-rating row exists for it', () => {
+  // Real-world case: the sheet has a row for this store+platform (Date,
+  // Store, Zomato, ...) but with every metric left blank because the
+  // listing has no reviews yet — that row's mere presence must not be
+  // mistaken for "rating entered".
+  const stores = [{ display_name: 'PNQ Ravet', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] } }];
+  const opsRows = [{ store: 'PNQ Ravet', platform: 'Zomato', date: '2026-08-18', availability: null, serviceability: null, cancellation: null, rating: null }];
+  const alerts = computeAlerts(stores, opsRows, THRESHOLDS, '2026-08-19');
+  assert.ok(alerts.some(a => a.type === 'rating' && a.platform === 'Zomato' && a.value === 'not live'));
 });
 
 test('computeAlerts does not flag missing Zomato rating when one exists', () => {
   const stores = [{ display_name: 'PNQ Pimpri', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] } }];
   const opsRows = [{ store: 'PNQ Pimpri', platform: 'Zomato', date: '2026-08-19', availability: null, serviceability: null, cancellation: null, rating: 4.0 }];
   const alerts = computeAlerts(stores, opsRows, THRESHOLDS, '2026-08-19');
-  assert.strictEqual(alerts.some(a => a.type === 'missing_zomato_rating'), false);
+  assert.strictEqual(alerts.some(a => a.type === 'rating' && a.value === 'not live'), false);
 });
 
 test('computeAlerts flags low online OPD for the most recent day', () => {

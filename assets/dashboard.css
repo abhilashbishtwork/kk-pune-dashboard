@@ -106,6 +106,19 @@ section > h2 { font-size: 1.15rem; margin: 0 0 12px; display: flex; align-items:
 .alert-card .badge { font-weight: 700; }
 .alert-card.ok { background: var(--good-bg); border-left: 4px solid var(--good); color: var(--brand-dark); font-weight: 600; }
 
+/* ---------- alert groups (compact — one row of chips per issue type) ---------- */
+.alert-group {
+  padding: 10px 14px; border-radius: 10px;
+  background: var(--crit-bg); border-left: 4px solid var(--crit);
+}
+.alert-group.sev-warn { background: var(--warn-bg); border-left-color: var(--warn); }
+.alert-group-heading { font-weight: 700; font-size: 0.82rem; margin-bottom: 6px; }
+.alert-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.alert-chip {
+  background: rgba(255,255,255,0.65); padding: 3px 10px; border-radius: 999px;
+  font-size: 0.8rem; font-weight: 600;
+}
+
 /* ---------- store cards ---------- */
 .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
 .store-card {
