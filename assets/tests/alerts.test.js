@@ -58,6 +58,19 @@ test('computeAlerts flags a store with no Zomato rating entered at all', () => {
   assert.ok(alerts.some(a => a.type === 'rating' && a.platform === 'Zomato' && a.value === 'not live'));
 });
 
+test('computeAlerts flags a missing Google listing for an Offline-category store', () => {
+  const stores = [{ display_name: 'PNQ Tribeca', category: 'Offline', launch_date: '2025-03-01', revenue: { daily: [] } }];
+  const opsRows = [{ store: 'PNQ Tribeca', platform: 'Swiggy', date: '2026-08-19', availability: null, serviceability: null, cancellation: null, rating: 4.6 }];
+  const alerts = computeAlerts(stores, opsRows, THRESHOLDS, '2026-08-19');
+  assert.ok(alerts.some(a => a.type === 'rating' && a.platform === 'Google' && a.value === 'not live'));
+});
+
+test('computeAlerts does not flag a missing Google listing for a non-Offline store', () => {
+  const stores = [{ display_name: 'PNQ Pimpri', category: 'Cfi', launch_date: '2025-03-01', revenue: { daily: [] } }];
+  const alerts = computeAlerts(stores, [], THRESHOLDS, '2026-08-19');
+  assert.strictEqual(alerts.some(a => a.type === 'rating' && a.platform === 'Google'), false);
+});
+
 test('computeAlerts flags missing Zomato rating even when a blank-rating row exists for it', () => {
   // Real-world case: the sheet has a row for this store+platform (Date,
   // Store, Zomato, ...) but with every metric left blank because the

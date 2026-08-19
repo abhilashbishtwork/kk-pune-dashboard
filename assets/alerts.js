@@ -18,7 +18,7 @@ function computeAlerts(stores, opsRows, thresholds, todayStr) {
         alerts.push({ store: store.display_name, type: 'zero_revenue', value: '₹0', detail: `No revenue recorded for ${todayStr}` });
       }
       if (todayEntry && todayEntry.online_orders < thresholds.min_online_opd) {
-        alerts.push({ store: store.display_name, type: 'low_online_opd', value: `${todayEntry.online_orders} orders`, detail: `Only ${todayEntry.online_orders} online orders on ${todayStr} (< ${thresholds.min_online_opd})` });
+        alerts.push({ store: store.display_name, type: 'low_online_opd', value: String(todayEntry.online_orders), detail: `Only ${todayEntry.online_orders} online orders on ${todayStr} (< ${thresholds.min_online_opd})` });
       }
     }
 
@@ -48,6 +48,13 @@ function computeAlerts(stores, opsRows, thresholds, todayStr) {
 
     if (!storeOps.some(r => r.platform === 'Zomato' && r.rating !== null)) {
       alerts.push({ store: store.display_name, type: 'rating', platform: 'Zomato', value: 'not live', detail: 'Zomato listing not live / no rating entered yet' });
+    }
+
+    // Google listing only applies to the dine-in-format (Offline) stores —
+    // matches the same rule used in the detail table (a "-" there, not a
+    // gap, for every non-Offline store).
+    if (store.category === 'Offline' && !storeOps.some(r => r.platform === 'Google' && r.rating !== null)) {
+      alerts.push({ store: store.display_name, type: 'rating', platform: 'Google', value: 'not live', detail: 'Google listing not live / no rating entered yet' });
     }
 
     for (const row of storeOps) {
