@@ -1019,7 +1019,7 @@ test('filterByCategory returns all stores for "All"', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `node --test assets/tests/`
+Run: `node --test assets/tests/alerts.test.js`
 Expected: FAIL with `Cannot find module '../alerts'`
 
 - [ ] **Step 3: Write the implementation**
@@ -1087,7 +1087,7 @@ if (typeof window !== 'undefined') {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `node --test assets/tests/`
+Run: `node --test assets/tests/alerts.test.js`
 Expected: PASS (9 tests)
 
 - [ ] **Step 5: Commit**
