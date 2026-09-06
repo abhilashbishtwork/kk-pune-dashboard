@@ -698,7 +698,7 @@
               "zomato": 8462.13,
               "ownly": 0.0
             },
-            "dine_in": 32333.89999999999,
+            "dine_in": 32333.899999999998,
             "total": 49637.149999999994,
             "online_orders": 47,
             "dine_in_orders": 106
@@ -790,8 +790,8 @@
           {
             "date": "2026-08-31",
             "online": {
-              "swiggy": 7814.05,
-              "zomato": 3933.32,
+              "swiggy": 7814.050000000001,
+              "zomato": 3933.3199999999997,
               "ownly": 0.0
             },
             "dine_in": 12497.0,
@@ -858,32 +858,37 @@
             "total": 58154.56,
             "online_orders": 39,
             "dine_in_orders": 108
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 8888.090000000002,
+              "zomato": 13537.699999999999,
+              "ownly": 0.0
+            },
+            "dine_in": 33755.299999999996,
+            "total": 56181.09,
+            "online_orders": 53,
+            "dine_in_orders": 99
           }
         ],
         "wtd": {
-          "online": 90511.27,
-          "dine_in": 98327.01,
-          "total": 188838.28,
-          "online_orders": 210,
-          "dine_in_orders": 310
+          "online": 0.0,
+          "dine_in": 0.0,
+          "total": 0.0,
+          "online_orders": 0,
+          "dine_in_orders": 0
         },
         "mtd": {
-          "online": 78763.90000000001,
-          "dine_in": 85830.01,
-          "total": 164593.91,
-          "online_orders": 179,
-          "dine_in_orders": 265
+          "online": 101189.69,
+          "dine_in": 119585.31,
+          "total": 220775.0,
+          "online_orders": 232,
+          "dine_in_orders": 364
         }
       },
       "ops_computed": {
         "daily": [
-          {
-            "date": "2026-08-13",
-            "platform": "Swiggy",
-            "order_count": 16,
-            "cancelled_orders": 1,
-            "kpt_p80_minutes": 3.0
-          },
           {
             "date": "2026-08-11",
             "platform": "Zomato",
@@ -899,18 +904,11 @@
             "kpt_p80_minutes": 3.4
           },
           {
-            "date": "2026-07-16",
+            "date": "2026-08-13",
             "platform": "Swiggy",
-            "order_count": 19,
-            "cancelled_orders": 0,
-            "kpt_p80_minutes": 4.8
-          },
-          {
-            "date": "2026-07-25",
-            "platform": "Zomato",
-            "order_count": 27,
-            "cancelled_orders": 2,
-            "kpt_p80_minutes": 2.2
+            "order_count": 16,
+            "cancelled_orders": 1,
+            "kpt_p80_minutes": 3.0
           },
           {
             "date": "2026-07-23",
@@ -925,6 +923,20 @@
             "order_count": 15,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 1.0
+          },
+          {
+            "date": "2026-07-16",
+            "platform": "Swiggy",
+            "order_count": 19,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 4.8
+          },
+          {
+            "date": "2026-07-25",
+            "platform": "Zomato",
+            "order_count": 27,
+            "cancelled_orders": 2,
+            "kpt_p80_minutes": 2.2
           },
           {
             "date": "2026-07-04",
@@ -997,6 +1009,13 @@
             "kpt_p80_minutes": 1.8
           },
           {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 29,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 1.0
+          },
+          {
             "date": "2026-08-14",
             "platform": "Swiggy",
             "order_count": 23,
@@ -1009,6 +1028,13 @@
             "order_count": 23,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 2.0
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 24,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 3.0
           },
           {
             "date": "2026-09-04",
@@ -2496,8 +2522,8 @@
               "zomato": 7092.309999999999,
               "ownly": 0.0
             },
-            "dine_in": 21092.799999999996,
-            "total": 29998.129999999994,
+            "dine_in": 21092.800000000003,
+            "total": 29998.13,
             "online_orders": 24,
             "dine_in_orders": 75
           },
@@ -2589,7 +2615,7 @@
             "date": "2026-08-31",
             "online": {
               "swiggy": 419.03,
-              "zomato": 3005.6299999999997,
+              "zomato": 3005.63,
               "ownly": 0.0
             },
             "dine_in": 3424.4,
@@ -2656,21 +2682,33 @@
             "total": 25023.590000000004,
             "online_orders": 18,
             "dine_in_orders": 76
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 419.0,
+              "zomato": 6301.98,
+              "ownly": 0.0
+            },
+            "dine_in": 21671.460000000003,
+            "total": 28392.440000000002,
+            "online_orders": 17,
+            "dine_in_orders": 90
           }
         ],
         "wtd": {
-          "online": 28190.65,
-          "dine_in": 40372.39,
-          "total": 68563.04000000001,
-          "online_orders": 75,
-          "dine_in_orders": 180
+          "online": 0.0,
+          "dine_in": 0.0,
+          "total": 0.0,
+          "online_orders": 0,
+          "dine_in_orders": 0
         },
         "mtd": {
-          "online": 24765.989999999998,
-          "dine_in": 36947.990000000005,
-          "total": 61713.98,
-          "online_orders": 64,
-          "dine_in_orders": 167
+          "online": 31486.969999999998,
+          "dine_in": 58619.45000000001,
+          "total": 90106.42000000001,
+          "online_orders": 81,
+          "dine_in_orders": 257
         }
       },
       "ops_computed": {
@@ -2963,6 +3001,13 @@
             "kpt_p80_minutes": 11.8
           },
           {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 17,
+            "cancelled_orders": 1,
+            "kpt_p80_minutes": 3.0
+          },
+          {
             "date": "2026-08-14",
             "platform": "Swiggy",
             "order_count": 4,
@@ -3059,6 +3104,13 @@
             "order_count": 8,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 6.2
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 1,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 6.0
           },
           {
             "date": "2026-09-04",
@@ -4291,20 +4343,32 @@
             "total": 5009.990000000001,
             "online_orders": 14,
             "dine_in_orders": 0
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 1665.03,
+              "zomato": 2148.5800000000004,
+              "ownly": 0.0
+            },
+            "dine_in": 0.0,
+            "total": 3813.6100000000006,
+            "online_orders": 11,
+            "dine_in_orders": 0
           }
         ],
         "wtd": {
-          "online": 17593.620000000003,
+          "online": 0.0,
           "dine_in": 0.0,
-          "total": 17593.620000000003,
-          "online_orders": 50,
+          "total": 0.0,
+          "online_orders": 0,
           "dine_in_orders": 0
         },
         "mtd": {
-          "online": 16145.470000000001,
+          "online": 19959.08,
           "dine_in": 0.0,
-          "total": 16145.470000000001,
-          "online_orders": 46,
+          "total": 19959.08,
+          "online_orders": 57,
           "dine_in_orders": 0
         }
       },
@@ -4325,11 +4389,11 @@
             "kpt_p80_minutes": 9.0
           },
           {
-            "date": "2026-08-15",
-            "platform": "Zomato",
+            "date": "2026-08-18",
+            "platform": "Swiggy",
             "order_count": 7,
             "cancelled_orders": 0,
-            "kpt_p80_minutes": 4.2
+            "kpt_p80_minutes": 5.8
           },
           {
             "date": "2026-07-08",
@@ -4339,11 +4403,11 @@
             "kpt_p80_minutes": 2.4
           },
           {
-            "date": "2026-08-18",
-            "platform": "Swiggy",
+            "date": "2026-08-15",
+            "platform": "Zomato",
             "order_count": 7,
             "cancelled_orders": 0,
-            "kpt_p80_minutes": 5.8
+            "kpt_p80_minutes": 4.2
           },
           {
             "date": "2026-08-05",
@@ -4458,6 +4522,13 @@
             "kpt_p80_minutes": 1.0
           },
           {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 8,
+            "cancelled_orders": 2,
+            "kpt_p80_minutes": 1.0
+          },
+          {
             "date": "2026-07-21",
             "platform": "Swiggy",
             "order_count": 2,
@@ -4519,6 +4590,13 @@
             "order_count": 6,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 11.0
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 7,
+            "cancelled_orders": 2,
+            "kpt_p80_minutes": 11.2
           },
           {
             "date": "2026-07-14",
@@ -5772,25 +5850,44 @@
             "total": 4323.22,
             "online_orders": 13,
             "dine_in_orders": 0
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 2055.5299999999997,
+              "zomato": 2935.01,
+              "ownly": 0.0
+            },
+            "dine_in": 0.0,
+            "total": 4990.54,
+            "online_orders": 11,
+            "dine_in_orders": 0
           }
         ],
         "wtd": {
-          "online": 20717.780000000002,
+          "online": 0.0,
           "dine_in": 0.0,
-          "total": 20717.780000000002,
-          "online_orders": 56,
+          "total": 0.0,
+          "online_orders": 0,
           "dine_in_orders": 0
         },
         "mtd": {
-          "online": 18984.32,
+          "online": 23974.86,
           "dine_in": 0.0,
-          "total": 18984.32,
-          "online_orders": 47,
+          "total": 23974.86,
+          "online_orders": 58,
           "dine_in_orders": 0
         }
       },
       "ops_computed": {
         "daily": [
+          {
+            "date": "2026-08-07",
+            "platform": "Zomato",
+            "order_count": 9,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 5.0
+          },
           {
             "date": "2026-08-09",
             "platform": "Swiggy",
@@ -5804,13 +5901,6 @@
             "order_count": 5,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 7.4
-          },
-          {
-            "date": "2026-08-07",
-            "platform": "Zomato",
-            "order_count": 9,
-            "cancelled_orders": 0,
-            "kpt_p80_minutes": 5.0
           },
           {
             "date": "2026-07-18",
@@ -6044,6 +6134,13 @@
             "kpt_p80_minutes": 1.0
           },
           {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 4,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 1.0
+          },
+          {
             "date": "2026-08-14",
             "platform": "Zomato",
             "order_count": 1,
@@ -6140,6 +6237,13 @@
             "order_count": 2,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 11.6
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 7,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 1.8
           },
           {
             "date": "2026-09-05",
@@ -7315,31 +7419,43 @@
             "total": 6802.74,
             "online_orders": 15,
             "dine_in_orders": 0
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 2339.02,
+              "zomato": 4937.79,
+              "ownly": 0.0
+            },
+            "dine_in": 0.0,
+            "total": 7276.8099999999995,
+            "online_orders": 20,
+            "dine_in_orders": 0
           }
         ],
         "wtd": {
-          "online": 21339.78,
+          "online": 0.0,
           "dine_in": 0.0,
-          "total": 21339.78,
-          "online_orders": 57,
+          "total": 0.0,
+          "online_orders": 0,
           "dine_in_orders": 0
         },
         "mtd": {
-          "online": 17477.760000000002,
+          "online": 24754.57,
           "dine_in": 0.0,
-          "total": 17477.760000000002,
-          "online_orders": 47,
+          "total": 24754.57,
+          "online_orders": 67,
           "dine_in_orders": 0
         }
       },
       "ops_computed": {
         "daily": [
           {
-            "date": "2026-08-08",
+            "date": "2026-09-02",
             "platform": "Swiggy",
-            "order_count": 1,
+            "order_count": 3,
             "cancelled_orders": 0,
-            "kpt_p80_minutes": 5.0
+            "kpt_p80_minutes": 5.2
           },
           {
             "date": "2026-07-27",
@@ -7349,18 +7465,18 @@
             "kpt_p80_minutes": 2.0
           },
           {
+            "date": "2026-08-08",
+            "platform": "Swiggy",
+            "order_count": 1,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 5.0
+          },
+          {
             "date": "2026-07-20",
             "platform": "Zomato",
             "order_count": 9,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 6.8
-          },
-          {
-            "date": "2026-09-02",
-            "platform": "Swiggy",
-            "order_count": 3,
-            "cancelled_orders": 0,
-            "kpt_p80_minutes": 5.2
           },
           {
             "date": "2026-08-09",
@@ -7664,6 +7780,13 @@
             "kpt_p80_minutes": 2.0
           },
           {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 10,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 3.2
+          },
+          {
             "date": "2026-07-16",
             "platform": "Swiggy",
             "order_count": 7,
@@ -7725,6 +7848,13 @@
             "order_count": 1,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 7.0
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 10,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 3.0
           },
           {
             "date": "2026-07-16",
@@ -9351,20 +9481,32 @@
             "total": 3250.52,
             "online_orders": 9,
             "dine_in_orders": 0
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 1947.0,
+              "zomato": 2490.9700000000003,
+              "ownly": 0.0
+            },
+            "dine_in": 0.0,
+            "total": 4437.97,
+            "online_orders": 9,
+            "dine_in_orders": 0
           }
         ],
         "wtd": {
-          "online": 14005.72,
+          "online": 0.0,
           "dine_in": 0.0,
-          "total": 14005.72,
-          "online_orders": 39,
+          "total": 0.0,
+          "online_orders": 0,
           "dine_in_orders": 0
         },
         "mtd": {
-          "online": 12890.449999999999,
+          "online": 17328.42,
           "dine_in": 0.0,
-          "total": 12890.449999999999,
-          "online_orders": 35,
+          "total": 17328.42,
+          "online_orders": 44,
           "dine_in_orders": 0
         }
       },
@@ -9378,11 +9520,11 @@
             "kpt_p80_minutes": 4.6
           },
           {
-            "date": "2026-08-02",
-            "platform": "Swiggy",
-            "order_count": 1,
+            "date": "2026-08-25",
+            "platform": "Zomato",
+            "order_count": 4,
             "cancelled_orders": 1,
-            "kpt_p80_minutes": 16.0
+            "kpt_p80_minutes": 1.0
           },
           {
             "date": "2026-08-24",
@@ -9392,11 +9534,11 @@
             "kpt_p80_minutes": 1.0
           },
           {
-            "date": "2026-08-25",
-            "platform": "Zomato",
-            "order_count": 4,
+            "date": "2026-08-02",
+            "platform": "Swiggy",
+            "order_count": 1,
             "cancelled_orders": 1,
-            "kpt_p80_minutes": 1.0
+            "kpt_p80_minutes": 16.0
           },
           {
             "date": "2026-08-20",
@@ -9546,6 +9688,13 @@
             "kpt_p80_minutes": 0.6
           },
           {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 4,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 1.0
+          },
+          {
             "date": "2026-09-01",
             "platform": "Zomato",
             "order_count": 4,
@@ -9663,6 +9812,13 @@
             "order_count": 3,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 0.0
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 5,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 1.0
           },
           {
             "date": "2026-07-17",
@@ -10183,39 +10339,37 @@
             "total": 6573.27,
             "online_orders": 16,
             "dine_in_orders": 0
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 1225.01,
+              "zomato": 1539.2,
+              "ownly": 0.0
+            },
+            "dine_in": 0.0,
+            "total": 2764.21,
+            "online_orders": 8,
+            "dine_in_orders": 0
           }
         ],
         "wtd": {
-          "online": 20184.45,
+          "online": 0.0,
           "dine_in": 0.0,
-          "total": 20184.45,
-          "online_orders": 57,
+          "total": 0.0,
+          "online_orders": 0,
           "dine_in_orders": 0
         },
         "mtd": {
-          "online": 18955.600000000002,
+          "online": 21719.81,
           "dine_in": 0.0,
-          "total": 18955.600000000002,
-          "online_orders": 53,
+          "total": 21719.81,
+          "online_orders": 61,
           "dine_in_orders": 0
         }
       },
       "ops_computed": {
         "daily": [
-          {
-            "date": "2026-08-21",
-            "platform": "Swiggy",
-            "order_count": 4,
-            "cancelled_orders": 1,
-            "kpt_p80_minutes": 1.0
-          },
-          {
-            "date": "2026-08-30",
-            "platform": "Zomato",
-            "order_count": 7,
-            "cancelled_orders": 1,
-            "kpt_p80_minutes": 1.8
-          },
           {
             "date": "2026-08-28",
             "platform": "Swiggy",
@@ -10229,6 +10383,20 @@
             "order_count": 4,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 2.4
+          },
+          {
+            "date": "2026-08-21",
+            "platform": "Swiggy",
+            "order_count": 4,
+            "cancelled_orders": 1,
+            "kpt_p80_minutes": 1.0
+          },
+          {
+            "date": "2026-08-30",
+            "platform": "Zomato",
+            "order_count": 7,
+            "cancelled_orders": 1,
+            "kpt_p80_minutes": 1.8
           },
           {
             "date": "2026-08-22",
@@ -10616,6 +10784,13 @@
             "kpt_p80_minutes": 5.6
           },
           {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 4,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 2.4
+          },
+          {
             "date": "2026-08-14",
             "platform": "Zomato",
             "order_count": 4,
@@ -10691,6 +10866,13 @@
             "order_count": 2,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 0.8
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 4,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 6.8
           }
         ]
       }
@@ -11169,32 +11351,37 @@
             "total": 3075.95,
             "online_orders": 9,
             "dine_in_orders": 0
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 1975.04,
+              "zomato": 4307.290000000001,
+              "ownly": 0.0
+            },
+            "dine_in": 0.0,
+            "total": 6282.330000000001,
+            "online_orders": 10,
+            "dine_in_orders": 0
           }
         ],
         "wtd": {
-          "online": 16578.37,
+          "online": 0.0,
           "dine_in": 0.0,
-          "total": 16578.37,
-          "online_orders": 43,
+          "total": 0.0,
+          "online_orders": 0,
           "dine_in_orders": 0
         },
         "mtd": {
-          "online": 16172.71,
+          "online": 22455.04,
           "dine_in": 0.0,
-          "total": 16172.71,
-          "online_orders": 40,
+          "total": 22455.04,
+          "online_orders": 50,
           "dine_in_orders": 0
         }
       },
       "ops_computed": {
         "daily": [
-          {
-            "date": "2026-08-13",
-            "platform": "Swiggy",
-            "order_count": 3,
-            "cancelled_orders": 0,
-            "kpt_p80_minutes": 5.8
-          },
           {
             "date": "2026-09-05",
             "platform": "Swiggy",
@@ -11203,11 +11390,25 @@
             "kpt_p80_minutes": 3.0
           },
           {
+            "date": "2026-08-13",
+            "platform": "Swiggy",
+            "order_count": 3,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 5.8
+          },
+          {
             "date": "2026-08-11",
             "platform": "Zomato",
             "order_count": 1,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 5.0
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 5,
+            "cancelled_orders": 1,
+            "kpt_p80_minutes": 23.2
           },
           {
             "date": "2026-09-04",
@@ -11222,6 +11423,13 @@
             "order_count": 4,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 8.0
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 7,
+            "cancelled_orders": 1,
+            "kpt_p80_minutes": 5.0
           },
           {
             "date": "2026-08-12",
@@ -12133,32 +12341,37 @@
             "total": 2770.25,
             "online_orders": 7,
             "dine_in_orders": 0
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 673.01,
+              "zomato": 7965.640000000001,
+              "ownly": 0.0
+            },
+            "dine_in": 0.0,
+            "total": 8638.650000000001,
+            "online_orders": 18,
+            "dine_in_orders": 0
           }
         ],
         "wtd": {
-          "online": 17804.059999999998,
+          "online": 0.0,
           "dine_in": 0.0,
-          "total": 17804.059999999998,
-          "online_orders": 49,
+          "total": 0.0,
+          "online_orders": 0,
           "dine_in_orders": 0
         },
         "mtd": {
-          "online": 15047.23,
+          "online": 23685.88,
           "dine_in": 0.0,
-          "total": 15047.23,
-          "online_orders": 40,
+          "total": 23685.88,
+          "online_orders": 58,
           "dine_in_orders": 0
         }
       },
       "ops_computed": {
         "daily": [
-          {
-            "date": "2026-08-15",
-            "platform": "Swiggy",
-            "order_count": 3,
-            "cancelled_orders": 0,
-            "kpt_p80_minutes": 3.8
-          },
           {
             "date": "2026-08-26",
             "platform": "Swiggy",
@@ -12167,11 +12380,18 @@
             "kpt_p80_minutes": 1.8
           },
           {
-            "date": "2026-08-23",
-            "platform": "Zomato",
-            "order_count": 8,
+            "date": "2026-08-15",
+            "platform": "Swiggy",
+            "order_count": 3,
             "cancelled_orders": 0,
-            "kpt_p80_minutes": 8.6
+            "kpt_p80_minutes": 3.8
+          },
+          {
+            "date": "2026-08-18",
+            "platform": "Zomato",
+            "order_count": 10,
+            "cancelled_orders": 1,
+            "kpt_p80_minutes": 11.8
           },
           {
             "date": "2026-08-06",
@@ -12181,11 +12401,11 @@
             "kpt_p80_minutes": 4.6
           },
           {
-            "date": "2026-08-18",
+            "date": "2026-08-23",
             "platform": "Zomato",
-            "order_count": 10,
-            "cancelled_orders": 1,
-            "kpt_p80_minutes": 11.8
+            "order_count": 8,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 8.6
           },
           {
             "date": "2026-08-17",
@@ -12440,6 +12660,13 @@
             "kpt_p80_minutes": 2.2
           },
           {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 3,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 11.6
+          },
+          {
             "date": "2026-08-12",
             "platform": "Swiggy",
             "order_count": 2,
@@ -12471,6 +12698,13 @@
             "date": "2026-08-12",
             "platform": "Zomato",
             "order_count": 3,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 7.2
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 15,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 7.2
           },
@@ -13017,20 +13251,32 @@
             "total": 2277.2,
             "online_orders": 6,
             "dine_in_orders": 0
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 900.03,
+              "zomato": 769.87,
+              "ownly": 0.0
+            },
+            "dine_in": 0.0,
+            "total": 1669.9,
+            "online_orders": 7,
+            "dine_in_orders": 0
           }
         ],
         "wtd": {
-          "online": 10122.18,
+          "online": 0.0,
           "dine_in": 0.0,
-          "total": 10122.18,
-          "online_orders": 24,
+          "total": 0.0,
+          "online_orders": 0,
           "dine_in_orders": 0
         },
         "mtd": {
-          "online": 8857.0,
+          "online": 10526.9,
           "dine_in": 0.0,
-          "total": 8857.0,
-          "online_orders": 19,
+          "total": 10526.9,
+          "online_orders": 26,
           "dine_in_orders": 0
         }
       },
@@ -13044,18 +13290,18 @@
             "kpt_p80_minutes": 1.0
           },
           {
-            "date": "2026-08-19",
-            "platform": "Zomato",
-            "order_count": 6,
-            "cancelled_orders": 1,
-            "kpt_p80_minutes": 4.4
-          },
-          {
             "date": "2026-08-22",
             "platform": "Swiggy",
             "order_count": 1,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 1.0
+          },
+          {
+            "date": "2026-08-19",
+            "platform": "Zomato",
+            "order_count": 6,
+            "cancelled_orders": 1,
+            "kpt_p80_minutes": 4.4
           },
           {
             "date": "2026-08-01",
@@ -13149,6 +13395,13 @@
             "kpt_p80_minutes": 5.8
           },
           {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 5,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 7.6
+          },
+          {
             "date": "2026-08-13",
             "platform": "Zomato",
             "order_count": 1,
@@ -13168,6 +13421,13 @@
             "order_count": 4,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 3.0
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 2,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 11.2
           },
           {
             "date": "2026-09-05",
@@ -13940,38 +14200,50 @@
             "total": 20301.58,
             "online_orders": 21,
             "dine_in_orders": 42
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 1652.01,
+              "zomato": 1709.86,
+              "ownly": 0.0
+            },
+            "dine_in": 11886.29,
+            "total": 15248.16,
+            "online_orders": 10,
+            "dine_in_orders": 54
           }
         ],
         "wtd": {
-          "online": 24609.760000000002,
-          "dine_in": 33247.79,
-          "total": 57857.55,
-          "online_orders": 62,
-          "dine_in_orders": 120
+          "online": 0.0,
+          "dine_in": 0.0,
+          "total": 0.0,
+          "online_orders": 0,
+          "dine_in_orders": 0
         },
         "mtd": {
-          "online": 22863.55,
-          "dine_in": 30668.690000000002,
-          "total": 53532.240000000005,
-          "online_orders": 57,
-          "dine_in_orders": 112
+          "online": 26225.42,
+          "dine_in": 42554.98,
+          "total": 68780.4,
+          "online_orders": 67,
+          "dine_in_orders": 166
         }
       },
       "ops_computed": {
         "daily": [
-          {
-            "date": "2026-08-19",
-            "platform": "Zomato",
-            "order_count": 2,
-            "cancelled_orders": 0,
-            "kpt_p80_minutes": 3.4
-          },
           {
             "date": "2026-08-30",
             "platform": "Zomato",
             "order_count": 4,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 1.0
+          },
+          {
+            "date": "2026-08-19",
+            "platform": "Zomato",
+            "order_count": 2,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 3.4
           },
           {
             "date": "2026-08-22",
@@ -14380,6 +14652,13 @@
             "kpt_p80_minutes": 4.6
           },
           {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 5,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 15.8
+          },
+          {
             "date": "2026-08-11",
             "platform": "Zomato",
             "order_count": 1,
@@ -14413,6 +14692,13 @@
             "order_count": 11,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 1.0
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 7,
+            "cancelled_orders": 2,
+            "kpt_p80_minutes": 11.6
           },
           {
             "date": "2026-08-12",
@@ -15119,11 +15405,11 @@
             "date": "2026-08-31",
             "online": {
               "swiggy": 1753.01,
-              "zomato": 3212.6800000000003,
+              "zomato": 3212.68,
               "ownly": 0.0
             },
             "dine_in": 4558.0,
-            "total": 9523.69,
+            "total": 9523.689999999999,
             "online_orders": 13,
             "dine_in_orders": 16
           },
@@ -15186,21 +15472,33 @@
             "total": 24686.25,
             "online_orders": 21,
             "dine_in_orders": 26
+          },
+          {
+            "date": "2026-09-06",
+            "online": {
+              "swiggy": 3250.02,
+              "zomato": 7011.74,
+              "ownly": 0.0
+            },
+            "dine_in": 13987.29,
+            "total": 24249.050000000003,
+            "online_orders": 24,
+            "dine_in_orders": 43
           }
         ],
         "wtd": {
-          "online": 37748.08,
-          "dine_in": 44043.0,
-          "total": 81791.08,
-          "online_orders": 101,
-          "dine_in_orders": 104
+          "online": 0.0,
+          "dine_in": 0.0,
+          "total": 0.0,
+          "online_orders": 0,
+          "dine_in_orders": 0
         },
         "mtd": {
-          "online": 32782.39,
-          "dine_in": 39485.0,
-          "total": 72267.39,
-          "online_orders": 88,
-          "dine_in_orders": 88
+          "online": 43044.15,
+          "dine_in": 53472.29,
+          "total": 96516.44,
+          "online_orders": 112,
+          "dine_in_orders": 131
         }
       },
       "ops_computed": {
@@ -15220,11 +15518,11 @@
             "kpt_p80_minutes": 7.2
           },
           {
-            "date": "2026-07-27",
-            "platform": "Swiggy",
-            "order_count": 8,
+            "date": "2026-09-04",
+            "platform": "Zomato",
+            "order_count": 10,
             "cancelled_orders": 0,
-            "kpt_p80_minutes": 12.4
+            "kpt_p80_minutes": 5.0
           },
           {
             "date": "2026-07-28",
@@ -15234,11 +15532,11 @@
             "kpt_p80_minutes": 6.6
           },
           {
-            "date": "2026-09-04",
-            "platform": "Zomato",
-            "order_count": 10,
+            "date": "2026-07-27",
+            "platform": "Swiggy",
+            "order_count": 8,
             "cancelled_orders": 0,
-            "kpt_p80_minutes": 5.0
+            "kpt_p80_minutes": 12.4
           },
           {
             "date": "2026-08-10",
@@ -15815,6 +16113,13 @@
             "kpt_p80_minutes": 3.4
           },
           {
+            "date": "2026-09-06",
+            "platform": "Zomato",
+            "order_count": 13,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 5.0
+          },
+          {
             "date": "2026-08-09",
             "platform": "Swiggy",
             "order_count": 11,
@@ -15897,6 +16202,13 @@
             "order_count": 14,
             "cancelled_orders": 0,
             "kpt_p80_minutes": 3.6
+          },
+          {
+            "date": "2026-09-06",
+            "platform": "Swiggy",
+            "order_count": 11,
+            "cancelled_orders": 0,
+            "kpt_p80_minutes": 2.0
           },
           {
             "date": "2026-09-05",
@@ -16042,5 +16354,5 @@
       }
     }
   ],
-  "generated_at_ist": "2026-09-06T02:12:55.124162+05:30"
+  "generated_at_ist": "2026-09-07T02:19:36.516985+05:30"
 }
