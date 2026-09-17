@@ -6,7 +6,7 @@ row count (one per store) gate validity.
 """
 
 
-def is_pull_valid(online_rows, dine_in_rows, launch_date_rows, expected_min_stores=13):
+def is_pull_valid(online_rows, dine_in_rows, launch_date_rows, expected_min_stores=15):
     if len(launch_date_rows) < expected_min_stores:
         return False
     if len(online_rows) == 0:

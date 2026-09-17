@@ -29,6 +29,8 @@ STORE_ROSTER = [
     {"up_name": "PNQ KK Sangvi", "pos_name": None, "display_name": "PNQ KK Sangvi", "category": "Rebel"},
     {"up_name": "PNQ KK Niyati Plaza", "pos_name": "PNQ KK Niyati Plaza Pos", "display_name": "PNQ KK Niyati Plaza", "category": "Offline"},
     {"up_name": "PNQ KK Baner", "pos_name": "PNQ KK FB Baner Pos", "display_name": "KK FB Baner", "category": "Offline"},
+    {"up_name": "PNQ KK JM Road", "pos_name": "PNQ KK JM Road Pos", "display_name": "PNQ JM Road", "category": "Offline"},
+    {"up_name": "PNQ KK Elpro Mall", "pos_name": "PNQ KK Elpro Mall Pos", "display_name": "PNQ Elpro Mall", "category": "Offline"},
 ]
 
 

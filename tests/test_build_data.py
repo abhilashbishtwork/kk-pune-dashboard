@@ -28,7 +28,7 @@ def test_run_writes_data_json_on_valid_pull(tmp_path, monkeypatch):
         "PNQ KK Tribeca", "PNQ KK Amanora", "PNQ KK Pimpri", "PNQ KK Kothrud",
         "PNQ KK Viman Nagar", "PNQ KK Wagholi", "PNQ KK Ravet", "PNQ KK Dhanori",
         "PNQ KK Hinjewadi", "PNQ KK Law College", "PNQ KK Sangvi",
-        "PNQ KK Niyati Plaza", "PNQ KK Baner",
+        "PNQ KK Niyati Plaza", "PNQ KK Baner", "PNQ KK JM Road", "PNQ KK Elpro Mall",
     ]]
     runner = _fake_runner(online_rows, [], [], launch_date_rows)
 
@@ -37,7 +37,7 @@ def test_run_writes_data_json_on_valid_pull(tmp_path, monkeypatch):
     assert result is True
     written = json.loads(fake_path.read_text())
     assert "generated_at_ist" in written
-    assert len(written["stores"]) == 13
+    assert len(written["stores"]) == 15
 
 
 def test_run_aborts_and_keeps_existing_file_on_bad_pull(tmp_path, monkeypatch):
